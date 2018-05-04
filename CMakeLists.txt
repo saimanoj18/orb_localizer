@@ -70,6 +70,7 @@ src/KeyFrameDatabase.cc
 src/Sim3Solver.cc
 src/Initializer.cc
 src/Viewer.cc
+src/types_depth.cc
 )
 
 target_link_libraries(${PROJECT_NAME}

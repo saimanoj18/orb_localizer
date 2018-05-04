@@ -74,8 +74,7 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
                  gtPose.at<float>(3,0),gtPose.at<float>(3,1),gtPose.at<float>(3,2),gtPose.at<float>(3,3);    
     Eigen::Matrix4f curpose = eigenGtPose*eigenTcv;
     pcl::transformPointCloud (gtVelodyne, mGtVelodyne, curpose);
-    cout<<eigenGtPose<<endl;
-    cout<<eigenTcv<<endl;
+
     // Frame ID
     mnId=nNextId++;
 
