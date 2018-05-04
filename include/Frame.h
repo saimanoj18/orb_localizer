@@ -33,6 +33,12 @@
 #include <opencv2/opencv.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/octree/octree.h>
+#include <pcl/octree/octree_pointcloud.h>
+#include <pcl/octree/octree_iterator.h>
+#include <pcl/octree/octree_impl.h> 
+#include <pcl/correspondence.h>
+#include <pcl/common/transforms.h>
 
 namespace ORB_SLAM2
 {
@@ -51,7 +57,7 @@ public:
     Frame(const Frame &frame);
 
     // Constructor for stereo depth matching. (YJ)
-    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const cv::Mat & gtpose, const pcl::PointCloud<pcl::PointXYZI> &gtVelodyne);
+    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, cv::Mat &Tcv, const float &bf, const float &thDepth, const cv::Mat & gtpose, const pcl::PointCloud<pcl::PointXYZI> &gtVelodyne);
 
     // Constructor for stereo cameras.
     Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
@@ -122,6 +128,7 @@ public:
     static float invfx;
     static float invfy;
     cv::Mat mDistCoef;
+    cv::Mat mTcv;
 
     // Stereo baseline multiplied by fx.
     float mbf;

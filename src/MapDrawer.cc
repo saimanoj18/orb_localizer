@@ -182,11 +182,11 @@ void MapDrawer::DrawGTposes()
     const float h = w*0.75;
     const float z = w*0.6;
 
+    pangolin::OpenGlMatrix M;
+    
     //Draw previous and current GT poses
     for (std::vector<cv::Mat>::iterator it = mGtPoses.begin() ; it != mGtPoses.end(); ++it)
     {
-        pangolin::OpenGlMatrix M;
-
         M.m[0] = (*it).at<float>(0,0);
         M.m[1] = (*it).at<float>(1,0);
         M.m[2] = (*it).at<float>(2,0);
@@ -245,7 +245,18 @@ void MapDrawer::DrawGTposes()
         
     }    
 
+    // Draw current map points
+    glPointSize(mPointSize);
+    glBegin(GL_POINTS);
+    glColor3f(0.0,0.0,1.0);
 
+    for(size_t i=0; i<mGtPoints.points.size();i++)
+    {
+        glVertex3f(mGtPoints.points[i].x,mGtPoints.points[i].y,mGtPoints.points[i].z);
+
+    }
+
+    glEnd();
 }
 
 void MapDrawer::DrawCurrentCamera(pangolin::OpenGlMatrix &Twc)

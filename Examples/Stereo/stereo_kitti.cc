@@ -91,7 +91,7 @@ int main(int argc, char **argv)
 #else
         std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
 #endif
-
+        
         // Pass the images to the SLAM system
         SLAM.TrackStereo(imLeft,imRight,tframe,gtPose,gtVelodyne);
 
@@ -169,15 +169,14 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
         if(!s.empty())
         {
             cv::Mat Tgt = cv::Mat::eye(4, 4, CV_64F);
+            Tgt.at<float>(3,3) = 1.0;
             for(int i=0; i<3; i++){
                 for(int j=0; j<4; j++){
                 int len = s.find(" ");
 	            Tgt.at<float>(i,j) = atof(s.substr(0, len).c_str());
-//                cout<<Tgt.at<float>(i,j)<<", ";
 	            s = s.erase(0, len + 1);
                 }
 	        }
-//            cout<<endl;
             vGTPoses.push_back(Tgt);
         }
     }
@@ -205,40 +204,56 @@ void LoadVelodyne(const string &strPathToSequence, const int num_id, pcl::PointC
     ss << setfill('0') << setw(6) << num_id;
     string strPathVeloFile = strPathToSequence + "/velodyne/" + ss.str() + ".bin";
 
-    ifstream fVelo;
-    fVelo.open(strPathVeloFile.c_str());
-    string s;
-    getline(fVelo,s);
-    while(!fVelo.eof())
-    {
-        string s;
-        getline(fVelo,s);
+//    ifstream fVelo;
+//    fVelo.open(strPathVeloFile.c_str());
+//    while(!fVelo.eof())
+//    {
+//        string s;
+//        getline(fVelo,s);
 
-        if(!s.empty())
-        {
-            pcl::PointXYZI pt;
+//        if(!s.empty())
+//        {
+//            pcl::PointXYZI pt;
 
-            int len = s.find(" ");
-            pt.x = atof(s.substr(0, len).c_str());
-            s = s.erase(0, len + 1);
-            
-            len = s.find(" ");
-            pt.y = atof(s.substr(0, len).c_str());
-            s = s.erase(0, len + 1);
+//            int len = s.find(" ");
+//            pt.x = atof(s.substr(0, len).c_str());
+//            s = s.erase(0, len + 1);
+//            
+//            len = s.find(" ");
+//            pt.y = atof(s.substr(0, len).c_str());
+//            s = s.erase(0, len + 1);
 
-            len = s.find(" ");
-            pt.z = atof(s.substr(0, len).c_str());
-            s = s.erase(0, len + 1);
+//            len = s.find(" ");
+//            pt.z = atof(s.substr(0, len).c_str());
+//            s = s.erase(0, len + 1);
 
-            len = s.find(" ");
-            pt.intensity = atof(s.substr(0, len).c_str());
-            s = s.erase(0, len + 1);
+//            len = s.find(" ");
+//            pt.intensity = atof(s.substr(0, len).c_str());
+//            s = s.erase(0, len + 1);
+//            cout<<pt.x<<", "<<pt.y<<", "<<pt.z<<", "<<endl;
+//            GTVelodyne.points.push_back(pt);
+//        }
+//    }
+//    fVelo.close();
 
-            GTVelodyne.push_back(pt);
-        }
+    // load point cloud
+    int32_t num = 1000000;
+    float *data = (float*)malloc(num*sizeof(float));
+    // pointers
+    float *px = data+0;
+    float *py = data+1;
+    float *pz = data+2;
+    float *pr = data+3;
+    FILE *stream;
+    stream = fopen (strPathVeloFile.c_str(),"rb");
+    num = fread(data,sizeof(float),num,stream)/4;
+    for (int32_t i=0; i<num; i++) {
+    pcl::PointXYZI pt;
+    pt.x = *px; pt.y = *py; pt.z = *pz; pt.intensity = *pr;
+    GTVelodyne.points.push_back(pt);
+    px+=4; py+=4; pz+=4; pr+=4;
     }
-
-    fVelo.close();
+    fclose(stream);
 
 
 }

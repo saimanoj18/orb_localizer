@@ -186,6 +186,7 @@ protected:
     cv::Mat mK;
     cv::Mat mDistCoef;
     float mbf;
+    cv::Mat mTcv;
 
     //New KeyFrame rules (according to fps)
     int mMinFrames;

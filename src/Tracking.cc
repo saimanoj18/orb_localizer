@@ -82,6 +82,25 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     if(fps==0)
         fps=30;
 
+    cv::Mat cTv(4,4,CV_32F);
+    cTv.at<float>(0,0) = fSettings["Camera.ctv00"];
+    cTv.at<float>(0,1) = fSettings["Camera.ctv01"];
+    cTv.at<float>(0,2) = fSettings["Camera.ctv02"];
+    cTv.at<float>(0,3) = fSettings["Camera.ctv03"];
+    cTv.at<float>(1,0) = fSettings["Camera.ctv10"];
+    cTv.at<float>(1,1) = fSettings["Camera.ctv11"];
+    cTv.at<float>(1,2) = fSettings["Camera.ctv12"];
+    cTv.at<float>(1,3) = fSettings["Camera.ctv13"];
+    cTv.at<float>(2,0) = fSettings["Camera.ctv20"];
+    cTv.at<float>(2,1) = fSettings["Camera.ctv21"];
+    cTv.at<float>(2,2) = fSettings["Camera.ctv22"];
+    cTv.at<float>(2,3) = fSettings["Camera.ctv23"];
+    cTv.at<float>(3,0) = 0.0;
+    cTv.at<float>(3,1) = 0.0;
+    cTv.at<float>(3,2) = 0.0;
+    cTv.at<float>(3,3) = 1.0;
+    cTv.copyTo(mTcv);
+
     // Max/Min Frames to insert keyframes and to check relocalisation
     mMinFrames = 0;
     mMaxFrames = fps;
@@ -195,7 +214,7 @@ cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRe
         }
     }
     
-    mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,gtPose,gtVelodyne);
+    mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mTcv,mbf,mThDepth,gtPose,gtVelodyne);
 
     Track();
 

@@ -30,6 +30,20 @@ Camera.RGB: 1
 # Close/Far threshold. Baseline times.
 ThDepth: 35
 
+# Extrinsic calibration between camera to velodyne
+Camera.ctv00: 4.276802385584e-04 
+Camera.ctv01: -9.999672484946e-01 
+Camera.ctv02: -8.084491683471e-03 
+Camera.ctv03: -1.198459927713e-02 
+Camera.ctv10: -7.210626507497e-03 
+Camera.ctv11: 8.081198471645e-03 
+Camera.ctv12: -9.999413164504e-01 
+Camera.ctv13: -5.403984729748e-02 
+Camera.ctv20: 9.999738645903e-01 
+Camera.ctv21: 4.859485810390e-04 
+Camera.ctv22: -7.206933692422e-03 
+Camera.ctv23: -2.921968648686e-01  
+
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
 #--------------------------------------------------------------------------------------------

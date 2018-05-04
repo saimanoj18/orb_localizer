@@ -56,10 +56,26 @@ Frame::Frame(const Frame &frame)
     if(!frame.mTcw.empty())
         SetPose(frame.mTcw);
 }
-Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const cv::Mat &gtPose, const pcl::PointCloud<pcl::PointXYZI> &gtVelodyne)
-    :mpORBvocabulary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight), mTimeStamp(timeStamp), mK(K.clone()),mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth), mGtPose(gtPose), mGtVelodyne(gtVelodyne),
+Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, cv::Mat &Tcv, const float &bf, const float &thDepth, const cv::Mat &gtPose, const pcl::PointCloud<pcl::PointXYZI> &gtVelodyne)
+    :mpORBvocabulary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight), mTimeStamp(timeStamp), mK(K.clone()),mDistCoef(distCoef.clone()), mTcv(Tcv.clone()), mbf(bf), mThDepth(thDepth), mGtPose(gtPose), //mGtVelodyne(gtVelodyne),
      mpReferenceKF(static_cast<KeyFrame*>(NULL))
 {
+
+    //transform gtVelodyne
+    Eigen::Matrix4f eigenTcv;
+    eigenTcv<<Tcv.at<float>(0,0),Tcv.at<float>(0,1),Tcv.at<float>(0,2),Tcv.at<float>(0,3),
+              Tcv.at<float>(1,0),Tcv.at<float>(1,1),Tcv.at<float>(1,2),Tcv.at<float>(1,3),
+              Tcv.at<float>(2,0),Tcv.at<float>(2,1),Tcv.at<float>(2,2),Tcv.at<float>(2,3),
+              Tcv.at<float>(3,0),Tcv.at<float>(3,1),Tcv.at<float>(3,2),Tcv.at<float>(3,3);
+    Eigen::Matrix4f eigenGtPose;
+    eigenGtPose<<gtPose.at<float>(0,0),gtPose.at<float>(0,1),gtPose.at<float>(0,2),gtPose.at<float>(0,3),
+                 gtPose.at<float>(1,0),gtPose.at<float>(1,1),gtPose.at<float>(1,2),gtPose.at<float>(1,3),
+                 gtPose.at<float>(2,0),gtPose.at<float>(2,1),gtPose.at<float>(2,2),gtPose.at<float>(2,3),
+                 gtPose.at<float>(3,0),gtPose.at<float>(3,1),gtPose.at<float>(3,2),gtPose.at<float>(3,3);    
+    Eigen::Matrix4f curpose = eigenGtPose*eigenTcv;
+    pcl::transformPointCloud (gtVelodyne, mGtVelodyne, curpose);
+    cout<<eigenGtPose<<endl;
+    cout<<eigenTcv<<endl;
     // Frame ID
     mnId=nNextId++;
 
