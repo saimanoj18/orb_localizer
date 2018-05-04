@@ -34,6 +34,8 @@ using namespace std;
 void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
                 vector<string> &vstrImageRight, vector<double> &vTimestamps, vector<cv::Mat> &vGTPoses);
 
+void LoadVelodyne(const string &strPathToSequence, const int num_id, pcl::PointCloud<pcl::PointXYZI> &GTVelodyne );
+
 int main(int argc, char **argv)
 {
     if(argc != 4)
@@ -65,13 +67,18 @@ int main(int argc, char **argv)
 
     // Main loop
     cv::Mat imLeft, imRight;
+    cv::Mat gtPose;
     for(int ni=0; ni<nImages; ni++)
     {
         // Read left and right images from file
         imLeft = cv::imread(vstrImageLeft[ni],CV_LOAD_IMAGE_UNCHANGED);
         imRight = cv::imread(vstrImageRight[ni],CV_LOAD_IMAGE_UNCHANGED);
+        gtPose = vGTPoses[ni];
         double tframe = vTimestamps[ni];
 
+        pcl::PointCloud<pcl::PointXYZI> GTVelodyne;
+        LoadVelodyne(string(argv[3]),ni, GTVelodyne);
+        cout<< GTVelodyne.size() <<endl;
         if(imLeft.empty())
         {
             cerr << endl << "Failed to load image at: "
@@ -86,7 +93,7 @@ int main(int argc, char **argv)
 #endif
 
         // Pass the images to the SLAM system
-        SLAM.TrackStereo(imLeft,imRight,tframe);
+        SLAM.TrackStereo(imLeft,imRight,tframe,gtPose);
 
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
@@ -149,6 +156,8 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
         }
     }
 
+    fTimes.close();
+
     ifstream fGTPoses;
     string strPathGTPoseFile = strPathToSequence + "/poses.txt";
     fGTPoses.open(strPathGTPoseFile.c_str());
@@ -168,6 +177,7 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
             vGTPoses.push_back(Tgt);
         }
     }
+    fGTPoses.close();
 
     string strPrefixLeft = strPathToSequence + "/image_0/";
     string strPrefixRight = strPathToSequence + "/image_1/";
@@ -183,4 +193,48 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
         vstrImageLeft[i] = strPrefixLeft + ss.str() + ".png";
         vstrImageRight[i] = strPrefixRight + ss.str() + ".png";
     }
+}
+
+void LoadVelodyne(const string &strPathToSequence, const int num_id, pcl::PointCloud<pcl::PointXYZI> &GTVelodyne)
+{
+    stringstream ss;
+    ss << setfill('0') << setw(6) << num_id;
+    string strPathVeloFile = strPathToSequence + "/velodyne/" + ss.str() + ".bin";
+
+    ifstream fVelo;
+    fVelo.open(strPathVeloFile.c_str());
+    string s;
+    getline(fVelo,s);
+    while(!fVelo.eof())
+    {
+        string s;
+        getline(fVelo,s);
+
+        if(!s.empty())
+        {
+            pcl::PointXYZI pt;
+
+            int len = s.find(" ");
+            pt.x = atof(s.substr(0, len).c_str());
+            s = s.erase(0, len + 1);
+            
+            len = s.find(" ");
+            pt.y = atof(s.substr(0, len).c_str());
+            s = s.erase(0, len + 1);
+
+            len = s.find(" ");
+            pt.z = atof(s.substr(0, len).c_str());
+            s = s.erase(0, len + 1);
+
+            len = s.find(" ");
+            pt.intensity = atof(s.substr(0, len).c_str());
+            s = s.erase(0, len + 1);
+
+            GTVelodyne.push_back(pt);
+        }
+    }
+
+    fVelo.close();
+
+
 }
