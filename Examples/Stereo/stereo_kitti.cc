@@ -76,9 +76,9 @@ int main(int argc, char **argv)
         gtPose = vGTPoses[ni];
         double tframe = vTimestamps[ni];
 
-        pcl::PointCloud<pcl::PointXYZI> GTVelodyne;
-        LoadVelodyne(string(argv[3]),ni, GTVelodyne);
-        cout<< GTVelodyne.size() <<endl;
+        pcl::PointCloud<pcl::PointXYZI> gtVelodyne;
+        LoadVelodyne(string(argv[3]),ni, gtVelodyne);
+
         if(imLeft.empty())
         {
             cerr << endl << "Failed to load image at: "
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 #endif
 
         // Pass the images to the SLAM system
-        SLAM.TrackStereo(imLeft,imRight,tframe,gtPose);
+        SLAM.TrackStereo(imLeft,imRight,tframe,gtPose,gtVelodyne);
 
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
@@ -169,11 +169,15 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
         if(!s.empty())
         {
             cv::Mat Tgt = cv::Mat::eye(4, 4, CV_64F);
-            for(int i=0; i<12; i++){
+            for(int i=0; i<3; i++){
+                for(int j=0; j<4; j++){
                 int len = s.find(" ");
-	            Tgt.at<float>(i) = atof(s.substr(0, len).c_str());
+	            Tgt.at<float>(i,j) = atof(s.substr(0, len).c_str());
+//                cout<<Tgt.at<float>(i,j)<<", ";
 	            s = s.erase(0, len + 1);
+                }
 	        }
+//            cout<<endl;
             vGTPoses.push_back(Tgt);
         }
     }

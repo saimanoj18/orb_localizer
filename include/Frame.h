@@ -51,7 +51,7 @@ public:
     Frame(const Frame &frame);
 
     // Constructor for stereo depth matching. (YJ)
-    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const cv::Mat & gtpose);
+    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, const cv::Mat & gtpose, const pcl::PointCloud<pcl::PointXYZI> &gtVelodyne);
 
     // Constructor for stereo cameras.
     Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
@@ -132,6 +132,10 @@ public:
     // Threshold close/far points. Close points are inserted from 1 view.
     // Far points are inserted as in the monocular case from 2 views.
     float mThDepth;
+
+    // GT pose and GT velodyne
+    cv::Mat mGtPose; 
+    pcl::PointCloud<pcl::PointXYZI> mGtVelodyne;
 
     // Number of KeyPoints.
     int N;

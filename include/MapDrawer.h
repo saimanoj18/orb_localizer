@@ -43,6 +43,7 @@ public:
     void DrawGTposes();
     void DrawCurrentCamera(pangolin::OpenGlMatrix &Twc);
     void SetCurrentCameraPose(const cv::Mat &Tcw);
+    void SetCurrentGT(const cv::Mat &gtPose, const pcl::PointCloud<pcl::PointXYZI> &gtVelodyne);
     void SetReferenceKeyFrame(KeyFrame *pKF);
     void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M);
 
@@ -56,6 +57,9 @@ private:
     float mCameraLineWidth;
 
     cv::Mat mCameraPose;
+
+    std::vector<cv::Mat> mGtPoses;//YJ
+    pcl::PointCloud<pcl::PointXYZI> mGtPoints;//YJ
 
     std::mutex mMutexCamera;
 };

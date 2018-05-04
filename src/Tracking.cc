@@ -163,6 +163,44 @@ void Tracking::SetViewer(Viewer *pViewer)
     mpViewer=pViewer;
 }
 
+cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp, const cv::Mat &gtPose, const pcl::PointCloud<pcl::PointXYZI> &gtVelodyne)
+{
+    mImGray = imRectLeft;
+    cv::Mat imGrayRight = imRectRight;
+
+    if(mImGray.channels()==3)
+    {
+        if(mbRGB)
+        {
+            cvtColor(mImGray,mImGray,CV_RGB2GRAY);
+            cvtColor(imGrayRight,imGrayRight,CV_RGB2GRAY);
+        }
+        else
+        {
+            cvtColor(mImGray,mImGray,CV_BGR2GRAY);
+            cvtColor(imGrayRight,imGrayRight,CV_BGR2GRAY);
+        }
+    }
+    else if(mImGray.channels()==4)
+    {
+        if(mbRGB)
+        {
+            cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
+            cvtColor(imGrayRight,imGrayRight,CV_RGBA2GRAY);
+        }
+        else
+        {
+            cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
+            cvtColor(imGrayRight,imGrayRight,CV_BGRA2GRAY);
+        }
+    }
+    
+    mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,gtPose,gtVelodyne);
+
+    Track();
+
+    return mCurrentFrame.mTcw.clone();
+}
 
 cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp)
 {
@@ -433,6 +471,8 @@ void Tracking::Track()
 
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 
+            mpMapDrawer->SetCurrentGT(mCurrentFrame.mGtPose, mCurrentFrame.mGtVelodyne);//YJ
+
             // Clean VO matches
             for(int i=0; i<mCurrentFrame.N; i++)
             {
@@ -555,6 +595,8 @@ void Tracking::StereoInitialization()
         mpMap->mvpKeyFrameOrigins.push_back(pKFini);
 
         mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
+
+        mpMapDrawer->SetCurrentGT(mCurrentFrame.mGtPose, mCurrentFrame.mGtVelodyne);//YJ
 
         mState=OK;
     }

@@ -131,6 +131,8 @@ void Viewer::Run()
             mpMapDrawer->DrawKeyFrames(menuShowKeyFrames,menuShowGraph);
         if(menuShowPoints)
             mpMapDrawer->DrawMapPoints();
+    
+        mpMapDrawer->DrawGTposes();//YJ
 
         pangolin::FinishFrame();
 

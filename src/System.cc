@@ -112,7 +112,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
 }
-cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const cv::Mat &gtPose)
+cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const cv::Mat &gtPose, const pcl::PointCloud<pcl::PointXYZI> &gtVelodyne)
 {
     if(mSensor!=STEREO)
     {
@@ -153,8 +153,8 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
         mbReset = false;
     }
     }
-
-    cv::Mat Tcw = mpTracker->GrabImageStereo(imLeft,imRight,timestamp);
+    
+    cv::Mat Tcw = mpTracker->GrabImageStereo(imLeft,imRight,timestamp,gtPose,gtVelodyne);
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;

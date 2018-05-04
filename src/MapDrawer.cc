@@ -176,6 +176,78 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph)
     }
 }
 
+void MapDrawer::DrawGTposes()
+{
+    const float &w = mCameraSize;
+    const float h = w*0.75;
+    const float z = w*0.6;
+
+    //Draw previous and current GT poses
+    for (std::vector<cv::Mat>::iterator it = mGtPoses.begin() ; it != mGtPoses.end(); ++it)
+    {
+        pangolin::OpenGlMatrix M;
+
+        M.m[0] = (*it).at<float>(0,0);
+        M.m[1] = (*it).at<float>(1,0);
+        M.m[2] = (*it).at<float>(2,0);
+        M.m[3]  = 0.0;
+
+        M.m[4] = (*it).at<float>(0,1);
+        M.m[5] = (*it).at<float>(1,1);
+        M.m[6] = (*it).at<float>(2,1);
+        M.m[7]  = 0.0;
+
+        M.m[8] = (*it).at<float>(0,2);
+        M.m[9] = (*it).at<float>(1,2);
+        M.m[10] = (*it).at<float>(2,2);
+        M.m[11]  = 0.0;
+
+        M.m[12] = (*it).at<float>(0,3);
+        M.m[13] = (*it).at<float>(1,3);
+        M.m[14] = (*it).at<float>(2,3);
+        M.m[15]  = 1.0;
+
+
+        glPushMatrix();
+
+#ifdef HAVE_GLES
+        glMultMatrixf(M.m);
+#else
+        glMultMatrixd(M.m);
+#endif
+
+        glLineWidth(mCameraLineWidth);
+        glColor3f(1.0f,0.0f,0.0f);
+        glBegin(GL_LINES);
+        glVertex3f(0,0,0);
+        glVertex3f(w,h,z);
+        glVertex3f(0,0,0);
+        glVertex3f(w,-h,z);
+        glVertex3f(0,0,0);
+        glVertex3f(-w,-h,z);
+        glVertex3f(0,0,0);
+        glVertex3f(-w,h,z);
+
+        glVertex3f(w,h,z);
+        glVertex3f(w,-h,z);
+
+        glVertex3f(-w,h,z);
+        glVertex3f(-w,-h,z);
+
+        glVertex3f(-w,h,z);
+        glVertex3f(w,h,z);
+
+        glVertex3f(-w,-h,z);
+        glVertex3f(w,-h,z);
+        glEnd();
+
+        glPopMatrix();
+        
+    }    
+
+
+}
+
 void MapDrawer::DrawCurrentCamera(pangolin::OpenGlMatrix &Twc)
 {
     const float &w = mCameraSize;
@@ -225,6 +297,13 @@ void MapDrawer::SetCurrentCameraPose(const cv::Mat &Tcw)
     mCameraPose = Tcw.clone();
 }
 
+void MapDrawer::SetCurrentGT(const cv::Mat &gtPose, const pcl::PointCloud<pcl::PointXYZI> &gtVelodyne)
+{
+    cv::Mat curpose = gtPose.clone();
+    mGtPoses.push_back(curpose);
+    mGtPoints = gtVelodyne;
+}
+
 void MapDrawer::GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M)
 {
     if(!mCameraPose.empty())
@@ -236,6 +315,9 @@ void MapDrawer::GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M)
             Rwc = mCameraPose.rowRange(0,3).colRange(0,3).t();
             twc = -Rwc*mCameraPose.rowRange(0,3).col(3);
         }
+//        cout<<Rwc.at<float>(0,0)<<" "<<Rwc.at<float>(0,1)<<" "<<Rwc.at<float>(0,2)<<" "<<twc.at<float>(0)<<endl;
+//        cout<<Rwc.at<float>(1,0)<<" "<<Rwc.at<float>(1,1)<<" "<<Rwc.at<float>(1,2)<<" "<<twc.at<float>(1)<<endl;
+//        cout<<Rwc.at<float>(2,0)<<" "<<Rwc.at<float>(2,1)<<" "<<Rwc.at<float>(2,2)<<" "<<twc.at<float>(2)<<endl;
 
         M.m[0] = Rwc.at<float>(0,0);
         M.m[1] = Rwc.at<float>(1,0);
