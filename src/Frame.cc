@@ -47,7 +47,8 @@ Frame::Frame(const Frame &frame)
      mpReferenceKF(frame.mpReferenceKF), mnScaleLevels(frame.mnScaleLevels),
      mfScaleFactor(frame.mfScaleFactor), mfLogScaleFactor(frame.mfLogScaleFactor),
      mvScaleFactors(frame.mvScaleFactors), mvInvScaleFactors(frame.mvInvScaleFactors),
-     mvLevelSigma2(frame.mvLevelSigma2), mvInvLevelSigma2(frame.mvInvLevelSigma2)
+     mvLevelSigma2(frame.mvLevelSigma2), mvInvLevelSigma2(frame.mvInvLevelSigma2),
+     mGtPose(frame.mGtPose), mGtVelodyne(frame.mGtVelodyne), mDispImg(frame.mDispImg)  
 {
     for(int i=0;i<FRAME_GRID_COLS;i++)
         for(int j=0; j<FRAME_GRID_ROWS; j++)
@@ -127,6 +128,11 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     mb = mbf/fx;
 
     AssignFeaturesToGrid();
+
+    // Depth image generation (YJ)
+    thread threadDisp(&Frame::CreateDispImg,this,imLeft,imRight);
+    threadDisp.join(); 
+
 }
 
 Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
@@ -321,6 +327,55 @@ void Frame::ExtractORB(int flag, const cv::Mat &im)
         (*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors);
     else
         (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight);
+}
+
+void Frame::CreateDispImg(const cv::Mat &imleft, const cv::Mat &imright)
+{
+ 
+    /////////////////////////disparity map generation////////////////////////////
+    mDispImg = cv::Mat::zeros(cv::Size(mnMaxX, mnMaxY), CV_16S);
+    cv::Ptr<cv::StereoSGBM> sbm;
+    sbm = cv::StereoSGBM::create(0,16*5,7);
+    sbm->compute(imleft, imright, mDispImg);
+
+//    /////////////////////////depth image generation/////////////////////////////
+//    int u, v;
+//    cv::Mat depth_image = cv::Mat::zeros(cv::Size(width, height), CV_32FC1);
+//    for(size_t i=0; i<width*height;i++)
+//    {
+//        u = i%width;
+//        v = i/width;
+//        
+//        int16_t d = disp.at<int16_t>(v,u);            
+//        if(d==0 || d!=d) d = 0; //
+//        mDepthImg[i] = basefx*16.0/((float)d);
+
+//        //depth image            
+//        depth_image.at<float>(v,u) = mDepthImg[i];
+//    }
+
+//    /////////////////////////depth gradient generation//////////////////////////
+//    cv::Mat dgx_image = cv::Mat::zeros(cv::Size(width, height), CV_32FC1);
+//    cv::Mat dgy_image = cv::Mat::zeros(cv::Size(width, height), CV_32FC1);
+//    cv::Scharr(depth_image, dgx_image, CV_32FC1, 1, 0);
+//    cv::Scharr(depth_image, dgy_image, CV_32FC1, 0, 1);
+//    int count_gradient = 0; 
+//    for(size_t i=0; i<width*height;i++)
+//    {
+//        u = i%width;
+//        v = i/width;
+
+//        //depth gradient
+//        depth_gradientX[i] = dgx_image.at<float>(v,u)/32.0f;
+//        depth_gradientY[i] = dgy_image.at<float>(v,u)/32.0f;
+
+//        //depth info
+//        float info_denom = sqrt(depth_gradientX[i]*depth_gradientX[i]+depth_gradientY[i]*depth_gradientY[i]);
+//        if (!isfinite(info_denom)) depth_info[i] = 0;
+//        else if (info_denom<0.01) depth_info[i] = 0.0;
+//        else depth_info[i] = 10.0/info_denom;
+//   
+//    }
 }
 
 void Frame::SetPose(cv::Mat Tcw)

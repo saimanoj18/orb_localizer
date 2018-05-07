@@ -71,6 +71,9 @@ public:
     // Extract ORB on the image. 0 for left image and 1 for right image.
     void ExtractORB(int flag, const cv::Mat &im);
 
+    // Create disp image (YJ)
+    void CreateDispImg(const cv::Mat &imleft, const cv::Mat &imright);
+
     // Compute Bag of Words representation.
     void ComputeBoW();
 
@@ -143,6 +146,10 @@ public:
     // GT pose and GT velodyne
     cv::Mat mGtPose; 
     pcl::PointCloud<pcl::PointXYZI> mGtVelodyne;
+    cv::Mat mDispImg;
+//    float* depth_gradientX;
+//    float* depth_gradientY;
+//    float* depth_info;
 
     // Number of KeyPoints.
     int N;

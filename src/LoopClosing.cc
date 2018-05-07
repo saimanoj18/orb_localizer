@@ -58,28 +58,40 @@ void LoopClosing::Run()
 {
     mbFinished =false;
 
+//    while(1)
+//    {
+//        // Check if there are keyframes in the queue
+//        if(CheckNewKeyFrames())
+//        {
+//            // Detect loop candidates and check covisibility consistency
+//            if(DetectLoop())
+//            {
+//               // Compute similarity transformation [sR|t]
+//               // In the stereo/RGBD case s=1
+//               if(ComputeSim3())
+//               {
+//                   // Perform loop fusion and pose graph optimization
+//                   CorrectLoop();
+//               }
+//            }
+//        }       
+
+//        ResetIfRequested();
+
+//        if(CheckFinish())
+//            break;
+
+//        usleep(5000);
+//    }
+
     while(1)
     {
         // Check if there are keyframes in the queue
         if(CheckNewKeyFrames())
         {
-            // Detect loop candidates and check covisibility consistency
-            if(DetectLoop())
-            {
-               // Compute similarity transformation [sR|t]
-               // In the stereo/RGBD case s=1
-               if(ComputeSim3())
-               {
-                   // Perform loop fusion and pose graph optimization
-                   CorrectLoop();
-               }
-            }
+//            ComputeSE3();
+//            Localize();
         }       
-
-        ResetIfRequested();
-
-        if(CheckFinish())
-            break;
 
         usleep(5000);
     }
@@ -228,6 +240,12 @@ bool LoopClosing::DetectLoop()
     return false;
 }
 
+void LoopClosing::ComputeSE3()
+{
+    
+
+
+}
 bool LoopClosing::ComputeSim3()
 {
     // For each consistent loop candidate we try to compute a Sim3

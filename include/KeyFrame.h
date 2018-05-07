@@ -31,6 +31,16 @@
 
 #include <mutex>
 
+#include <opencv2/opencv.hpp>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <pcl/octree/octree.h>
+#include <pcl/octree/octree_pointcloud.h>
+#include <pcl/octree/octree_iterator.h>
+#include <pcl/octree/octree_impl.h> 
+#include <pcl/correspondence.h>
+#include <pcl/common/transforms.h>
+
 
 namespace ORB_SLAM2
 {
@@ -165,6 +175,10 @@ public:
     const std::vector<float> mvuRight; // negative value for monocular points
     const std::vector<float> mvDepth; // negative value for monocular points
     const cv::Mat mDescriptors;
+
+    //YJ
+    pcl::PointCloud<pcl::PointXYZI> mGtVelodyne;
+    cv::Mat mDispImg;
 
     //BoW
     DBoW2::BowVector mBowVec;

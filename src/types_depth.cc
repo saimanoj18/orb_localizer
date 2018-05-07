@@ -105,15 +105,14 @@ namespace g2o {
 
     if (_measurement<0.1f)
     {
-//      _error<< 0.0f;
+      _error<< 0.0f;
       _jacobianOplusXi << 0,0,0;
       _jacobianOplusXj<<0,0,0,0,0,0,0;
-//      _information<<0.0f;
+      _information<<0.0f;
     }
     else
     {
 
-//        std::cout<<_error[0]<<std::endl;
         Matrix<double,1,2> D_u;
         Matrix<double,2,4> K_p;
         Matrix<double,4,6> p_note;

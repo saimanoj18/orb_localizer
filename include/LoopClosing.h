@@ -88,6 +88,8 @@ protected:
 
     bool DetectLoop();
 
+    void ComputeSE3();//YJ
+    
     bool ComputeSim3();
 
     void SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap);
