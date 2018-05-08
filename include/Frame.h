@@ -57,7 +57,7 @@ public:
     Frame(const Frame &frame);
 
     // Constructor for stereo depth matching. (YJ)
-    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, cv::Mat &Tcv, const float &bf, const float &thDepth, const cv::Mat & gtpose, const pcl::PointCloud<pcl::PointXYZI> &gtVelodyne);
+    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, cv::Mat &Tcv, const float &bf, const float &thDepth, const cv::Mat & gtpose, const pcl::PointCloud<pcl::PointXYZ> &gtVelodyne);
 
     // Constructor for stereo cameras.
     Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
@@ -145,7 +145,7 @@ public:
 
     // GT pose and GT velodyne
     cv::Mat mGtPose; 
-    pcl::PointCloud<pcl::PointXYZI> mGtVelodyne;
+    pcl::PointCloud<pcl::PointXYZ> mGtVelodyne;
     cv::Mat mDispImg;
 //    float* depth_gradientX;
 //    float* depth_gradientY;

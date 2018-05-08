@@ -39,6 +39,7 @@ endif()
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(PCL 1.7 REQUIRED)
+find_package(libLAS REQUIRED)
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -46,6 +47,7 @@ ${PROJECT_SOURCE_DIR}/include
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${PCL_INCLUDE_DIRS}
+${libLAS_INCLUDE_DIRS}
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -77,6 +79,7 @@ target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
+${libLAS_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
 ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
 )
@@ -90,6 +93,10 @@ Examples/RGB-D/rgbd_tum.cc)
 target_link_libraries(rgbd_tum ${PROJECT_NAME})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
+
+add_executable(pankyo
+Examples/Stereo/pankyo.cc)
+target_link_libraries(pankyo ${PROJECT_NAME})
 
 add_executable(stereo_kitti
 Examples/Stereo/stereo_kitti.cc)

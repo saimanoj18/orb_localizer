@@ -112,7 +112,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
 }
-cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const cv::Mat &gtPose, const pcl::PointCloud<pcl::PointXYZI> &gtVelodyne)
+cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const cv::Mat &gtPose, const pcl::PointCloud<pcl::PointXYZ> &gtVelodyne)
 {
     if(mSensor!=STEREO)
     {

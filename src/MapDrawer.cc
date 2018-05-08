@@ -245,18 +245,17 @@ void MapDrawer::DrawGTposes()
         
     }    
 
-//    // Draw current map points
-//    glPointSize(mPointSize);
-//    glBegin(GL_POINTS);
-//    glColor3f(0.0,0.0,1.0);
+    // Draw current map points
+    glPointSize(mPointSize);
+    glBegin(GL_POINTS);
+    glColor3f(0.0,0.0,1.0);
 
-//    for(size_t i=0; i<mGtPoints.points.size();i++)
-//    {
-//        glVertex3f(mGtPoints.points[i].x,mGtPoints.points[i].y,mGtPoints.points[i].z);
+    for(size_t i=0; i<mGtPoints.points.size();i++)
+    {
+        glVertex3f(mGtPoints.points[i].x,mGtPoints.points[i].y,mGtPoints.points[i].z);
+    }
+    glEnd();
 
-//    }
-
-//    glEnd();
 }
 
 void MapDrawer::DrawCurrentCamera(pangolin::OpenGlMatrix &Twc)
@@ -308,7 +307,7 @@ void MapDrawer::SetCurrentCameraPose(const cv::Mat &Tcw)
     mCameraPose = Tcw.clone();
 }
 
-void MapDrawer::SetCurrentGT(const cv::Mat &gtPose, const pcl::PointCloud<pcl::PointXYZI> &gtVelodyne)
+void MapDrawer::SetCurrentGT(const cv::Mat &gtPose, const pcl::PointCloud<pcl::PointXYZ> &gtVelodyne)
 {
     cv::Mat curpose = gtPose.clone();
     mGtPoses.push_back(curpose);

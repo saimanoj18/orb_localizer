@@ -374,8 +374,8 @@ void LoopClosing::ComputeSE3()
         int i_idx = ((int)Ipos[1])*vSim3->_width+((int)Ipos[0]);
         
         
-        if ( xyz[2]>0.0f && xyz[2]<30.0f){//
-                if (Ipos[0]<vSim3->_width && Ipos[0]>=0 && Ipos[1]<vSim3->_height && Ipos[1]>=0 && depth_info[i_idx]>5.0)
+        if ( xyz[2]>0.0f ){//&& xyz[2]<30.0f
+                if (Ipos[0]<vSim3->_width && Ipos[0]>=0 && Ipos[1]<vSim3->_height && Ipos[1]>=0 && depth_info[i_idx]>0.0)
                 {
                     // SET PointXYZ VERTEX
                     g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();

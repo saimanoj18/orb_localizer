@@ -177,7 +177,7 @@ public:
     const cv::Mat mDescriptors;
 
     //YJ
-    pcl::PointCloud<pcl::PointXYZI> mGtVelodyne;
+    pcl::PointCloud<pcl::PointXYZ> mGtVelodyne;
     cv::Mat mDispImg;
 
     //BoW

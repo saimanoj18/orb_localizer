@@ -34,7 +34,7 @@ using namespace std;
 void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
                 vector<string> &vstrImageRight, vector<double> &vTimestamps, vector<cv::Mat> &vGTPoses);
 
-void LoadVelodyne(const string &strPathToSequence, const int num_id, pcl::PointCloud<pcl::PointXYZI> &GTVelodyne );
+void LoadVelodyne(const string &strPathToSequence, const int num_id, pcl::PointCloud<pcl::PointXYZ> &GTVelodyne );
 
 int main(int argc, char **argv)
 {
@@ -76,7 +76,7 @@ int main(int argc, char **argv)
         gtPose = vGTPoses[ni];
         double tframe = vTimestamps[ni];
 
-        pcl::PointCloud<pcl::PointXYZI> gtVelodyne;
+        pcl::PointCloud<pcl::PointXYZ> gtVelodyne;
         LoadVelodyne(string(argv[3]),ni, gtVelodyne);
 
         if(imLeft.empty())
@@ -198,7 +198,7 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
     }
 }
 
-void LoadVelodyne(const string &strPathToSequence, const int num_id, pcl::PointCloud<pcl::PointXYZI> &GTVelodyne)
+void LoadVelodyne(const string &strPathToSequence, const int num_id, pcl::PointCloud<pcl::PointXYZ> &GTVelodyne)
 {
     stringstream ss;
     ss << setfill('0') << setw(6) << num_id;
@@ -213,7 +213,7 @@ void LoadVelodyne(const string &strPathToSequence, const int num_id, pcl::PointC
 
 //        if(!s.empty())
 //        {
-//            pcl::PointXYZI pt;
+//            pcl::PointXYZ pt;
 
 //            int len = s.find(" ");
 //            pt.x = atof(s.substr(0, len).c_str());
@@ -248,10 +248,10 @@ void LoadVelodyne(const string &strPathToSequence, const int num_id, pcl::PointC
     stream = fopen (strPathVeloFile.c_str(),"rb");
     num = fread(data,sizeof(float),num,stream)/4;
     for (int32_t i=0; i<num; i++) {
-    pcl::PointXYZI pt;
-    pt.x = *px; pt.y = *py; pt.z = *pz; pt.intensity = *pr;
+    pcl::PointXYZ pt;
+    pt.x = *px; pt.y = *py; pt.z = *pz; //pt.intensity = *pr;
     GTVelodyne.points.push_back(pt);
-    px+=4; py+=4; pz+=4; pr+=4;
+    px+=4; py+=4; pz+=4; //pr+=4;
     }
     fclose(stream);
 

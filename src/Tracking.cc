@@ -182,7 +182,7 @@ void Tracking::SetViewer(Viewer *pViewer)
     mpViewer=pViewer;
 }
 
-cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp, const cv::Mat &gtPose, const pcl::PointCloud<pcl::PointXYZI> &gtVelodyne)
+cv::Mat Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const double &timestamp, const cv::Mat &gtPose, const pcl::PointCloud<pcl::PointXYZ> &gtVelodyne)
 {
     mImGray = imRectLeft;
     cv::Mat imGrayRight = imRectRight;
