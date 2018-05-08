@@ -79,6 +79,10 @@ namespace g2o {
     return os.good();
   }
 
+  EdgeXYZDepth::EdgeXYZDepth() : BaseBinaryEdge<1, double, VertexSBAPointXYZ, VertexDepth>()
+  {
+  }
+
   bool EdgeXYZDepth::read(std::istream& is)
   {
     return true;

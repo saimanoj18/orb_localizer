@@ -31,7 +31,14 @@
 
 #include <thread>
 #include <mutex>
+#include "Thirdparty/g2o/g2o/core/block_solver.h"
+#include "Thirdparty/g2o/g2o/core/optimization_algorithm_levenberg.h"
+#include "Thirdparty/g2o/g2o/solvers/linear_solver_eigen.h"
+#include "Thirdparty/g2o/g2o/core/robust_kernel_impl.h"
+#include "Thirdparty/g2o/g2o/solvers/linear_solver_dense.h"
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
+#include "types_depth.h"
+
 
 namespace ORB_SLAM2
 {
@@ -86,6 +93,8 @@ protected:
 
     bool CheckNewKeyFrames();
 
+    bool DetectLocalize();//YJ
+
     bool DetectLoop();
 
     void ComputeSE3();//YJ
@@ -93,6 +102,8 @@ protected:
     bool ComputeSim3();
 
     void SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap);
+
+    void Localize();//YJ
 
     void CorrectLoop();
 
@@ -146,6 +157,7 @@ protected:
 
 
     bool mnFullBAIdx;
+
 };
 
 } //namespace ORB_SLAM
