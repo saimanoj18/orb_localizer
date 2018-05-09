@@ -40,7 +40,8 @@
 #include <pcl/octree/octree_impl.h> 
 #include <pcl/correspondence.h>
 #include <pcl/common/transforms.h>
-
+#include <pcl/registration/icp.h>
+#include <pcl/filters/filter_indices.h>
 
 namespace ORB_SLAM2
 {

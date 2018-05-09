@@ -115,16 +115,19 @@ class EdgeXYZDepth : public  BaseBinaryEdge<1, double, VertexSBAPointXYZ, Vertex
       if (Ipos[0]>=v1->_width || Ipos[0]<0 || Ipos[1]>=v1->_height || Ipos[1]<0 )
       {
           _error<< 0.0f;
+          _information<< 0.0f;
           _measurement = 0.0f;
       }
       else if(!std::isfinite(v1->ImageD[idx]))
       {
           _error<< 0.0f;
+          _information<< 0.0f;
           _measurement = 0.0f;
       }
      else if(!std::isfinite(v1->ImageGx[idx]) || !std::isfinite(v1->ImageGy[idx]))
      {
           _error<< 0.0f;
+          _information<< 0.0f;
           _measurement = 0.0f;
 
      }
@@ -134,7 +137,12 @@ class EdgeXYZDepth : public  BaseBinaryEdge<1, double, VertexSBAPointXYZ, Vertex
           Matrix<double, 1, 1> obsz(v1->estimate().map(v2->estimate())[2]);
           _information<< v1->ImageInfo[idx];
           _error = obsz-e1;
-          _measurement = 1.0f;  
+          _measurement = 1.0f; 
+//         if(_error[0]>10.0 || _error[0]<-10.0)
+//         {
+//           _error<< 0.0f;
+//           _measurement = 0.0f;
+//         } 
       }
     }
 

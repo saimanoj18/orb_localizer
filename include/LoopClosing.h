@@ -97,13 +97,15 @@ protected:
 
     bool DetectLoop();
 
-    void ComputeSE3();//YJ
+    bool ComputeSE3();//YJ
     
     bool ComputeSim3();
 
     void SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap);
 
     void Localize();//YJ
+
+    void Relocalize();//YJ
 
     void CorrectLoop();
 

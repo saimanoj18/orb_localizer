@@ -34,7 +34,7 @@ using namespace std;
 void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
                 vector<string> &vstrImageRight, vector<double> &vTimestamps, vector<cv::Mat> &vGTPoses);
 
-void LoadVelodyne(const string &strPathToSequence, const int num_id, pcl::PointCloud<pcl::PointXYZ> &GTVelodyne );
+void LoadVelodyne(const string &strPathToSequence, const string &strSettingPath, cv::Mat cur_pose, const int num_id, pcl::PointCloud<pcl::PointXYZ> &GTVelodyne);
 
 int main(int argc, char **argv)
 {
@@ -77,7 +77,7 @@ int main(int argc, char **argv)
         double tframe = vTimestamps[ni];
 
         pcl::PointCloud<pcl::PointXYZ> gtVelodyne;
-        LoadVelodyne(string(argv[3]),ni, gtVelodyne);
+        LoadVelodyne(string(argv[3]),string(argv[2]), gtPose, ni, gtVelodyne);
 
         if(imLeft.empty())
         {
@@ -168,7 +168,7 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
 
         if(!s.empty())
         {
-            cv::Mat Tgt = cv::Mat::eye(4, 4, CV_64F);
+            cv::Mat Tgt = cv::Mat::eye(4, 4, CV_32F);
             Tgt.at<float>(3,3) = 1.0;
             for(int i=0; i<3; i++){
                 for(int j=0; j<4; j++){
@@ -198,52 +198,43 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
     }
 }
 
-void LoadVelodyne(const string &strPathToSequence, const int num_id, pcl::PointCloud<pcl::PointXYZ> &GTVelodyne)
+void LoadVelodyne(const string &strPathToSequence, const string &strSettingPath, cv::Mat cur_pose, const int num_id, pcl::PointCloud<pcl::PointXYZ> &GTVelodyne)
 {
+
+    //Load Tcv
+    cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+    cv::Mat Tcv(4,4,CV_32F);
+    Tcv.at<float>(0,0) = fSettings["Camera.ctv00"];
+    Tcv.at<float>(0,1) = fSettings["Camera.ctv01"];
+    Tcv.at<float>(0,2) = fSettings["Camera.ctv02"];
+    Tcv.at<float>(0,3) = fSettings["Camera.ctv03"];
+    Tcv.at<float>(1,0) = fSettings["Camera.ctv10"];
+    Tcv.at<float>(1,1) = fSettings["Camera.ctv11"];
+    Tcv.at<float>(1,2) = fSettings["Camera.ctv12"];
+    Tcv.at<float>(1,3) = fSettings["Camera.ctv13"];
+    Tcv.at<float>(2,0) = fSettings["Camera.ctv20"];
+    Tcv.at<float>(2,1) = fSettings["Camera.ctv21"];
+    Tcv.at<float>(2,2) = fSettings["Camera.ctv22"];
+    Tcv.at<float>(2,3) = fSettings["Camera.ctv23"];
+    Tcv.at<float>(3,0) = 0.0;
+    Tcv.at<float>(3,1) = 0.0;
+    Tcv.at<float>(3,2) = 0.0;
+    Tcv.at<float>(3,3) = 1.0;
+
+
+    // load point cloud
     stringstream ss;
     ss << setfill('0') << setw(6) << num_id;
     string strPathVeloFile = strPathToSequence + "/velodyne/" + ss.str() + ".bin";
 
-//    ifstream fVelo;
-//    fVelo.open(strPathVeloFile.c_str());
-//    while(!fVelo.eof())
-//    {
-//        string s;
-//        getline(fVelo,s);
-
-//        if(!s.empty())
-//        {
-//            pcl::PointXYZ pt;
-
-//            int len = s.find(" ");
-//            pt.x = atof(s.substr(0, len).c_str());
-//            s = s.erase(0, len + 1);
-//            
-//            len = s.find(" ");
-//            pt.y = atof(s.substr(0, len).c_str());
-//            s = s.erase(0, len + 1);
-
-//            len = s.find(" ");
-//            pt.z = atof(s.substr(0, len).c_str());
-//            s = s.erase(0, len + 1);
-
-//            len = s.find(" ");
-//            pt.intensity = atof(s.substr(0, len).c_str());
-//            s = s.erase(0, len + 1);
-//            cout<<pt.x<<", "<<pt.y<<", "<<pt.z<<", "<<endl;
-//            GTVelodyne.points.push_back(pt);
-//        }
-//    }
-//    fVelo.close();
-
-    // load point cloud
     int32_t num = 1000000;
     float *data = (float*)malloc(num*sizeof(float));
-    // pointers
+
     float *px = data+0;
     float *py = data+1;
     float *pz = data+2;
     float *pr = data+3;
+
     FILE *stream;
     stream = fopen (strPathVeloFile.c_str(),"rb");
     num = fread(data,sizeof(float),num,stream)/4;
@@ -254,6 +245,16 @@ void LoadVelodyne(const string &strPathToSequence, const int num_id, pcl::PointC
     px+=4; py+=4; pz+=4; //pr+=4;
     }
     fclose(stream);
+
+    // transform point cloud
+    cv::Mat start_mat = cur_pose*Tcv;
+    Eigen::Matrix4f eigenPose;
+    eigenPose<<start_mat.at<float>(0,0),start_mat.at<float>(0,1),start_mat.at<float>(0,2),start_mat.at<float>(0,3),
+               start_mat.at<float>(1,0),start_mat.at<float>(1,1),start_mat.at<float>(1,2),start_mat.at<float>(1,3),
+               start_mat.at<float>(2,0),start_mat.at<float>(2,1),start_mat.at<float>(2,2),start_mat.at<float>(2,3),
+               start_mat.at<float>(3,0),start_mat.at<float>(3,1),start_mat.at<float>(3,2),start_mat.at<float>(3,3);
+    pcl::transformPointCloud (GTVelodyne, GTVelodyne, eigenPose);
+ 
 
 
 }
