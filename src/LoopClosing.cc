@@ -442,8 +442,7 @@ bool LoopClosing::ComputeSE3()
                 continue;
             if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
                 continue;
-            if(iMP%10==0)
-            {
+
             // Project with non-corrected pose and project back with corrected pose
             cv::Mat P3Dw = pMPi->GetWorldPos();
             Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
@@ -452,9 +451,8 @@ bool LoopClosing::ComputeSE3()
             pts.y = eigP3Dw[1];
             pts.z = eigP3Dw[2];
             cloud_in->push_back(pts);
-            }
         }
-
+        cout<<"local map points: "<<vpMPsi.size()<<endl;
         if(vpMPsi.size()>1000)
         {
             pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
