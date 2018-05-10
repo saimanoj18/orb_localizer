@@ -272,16 +272,16 @@ void SegmentVelodyne(cv::Mat &vGTPose,  pcl::octree::OctreePointCloudSearch<pcl:
     searchPoint.z = vGTPose.at<float>(2,3);
     std::vector<int> pointIdxRadiusSearch;
     std::vector<float> pointRadiusSquaredDistance;
-    oc.radiusSearch (searchPoint, 50.0f, pointIdxRadiusSearch, pointRadiusSquaredDistance);
+    oc.radiusSearch (searchPoint, 30.0f, pointIdxRadiusSearch, pointRadiusSquaredDistance);
 
     curVelodyne.clear();
-    curVelodyne.width = pointIdxRadiusSearch.size()/5+1;
+    curVelodyne.width = pointIdxRadiusSearch.size()/10+1;
     curVelodyne.height = 1;
     curVelodyne.points.resize (curVelodyne.width * curVelodyne.height);
     int count = 0;
     for (size_t i = 0; i < pointIdxRadiusSearch.size (); ++i)
     {
-        if(i%5==0){
+        if(i%10==0){
         curVelodyne.points[count].x = GTVelodyne->points[ pointIdxRadiusSearch[i] ].x;
         curVelodyne.points[count].y = GTVelodyne->points[ pointIdxRadiusSearch[i] ].y;
         curVelodyne.points[count].z = GTVelodyne->points[ pointIdxRadiusSearch[i] ].z;

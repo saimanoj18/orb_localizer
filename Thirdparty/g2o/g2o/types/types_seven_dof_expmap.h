@@ -33,6 +33,7 @@
 
 #include "../core/base_vertex.h"
 #include "../core/base_binary_edge.h"
+#include "../core/base_unary_edge.h"
 #include "types_six_dof_expmap.h"
 #include "sim3.h"
 
@@ -92,6 +93,24 @@ namespace g2o {
 
   protected:
   };
+
+
+class  EdgeSim3OnlyPose: public  BaseUnaryEdge<7, Sim3, VertexSim3Expmap>{
+public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  EdgeSim3OnlyPose(){}
+  virtual bool read(std::istream& is);
+  virtual bool write(std::ostream& os) const;
+  void computeError()  {
+    const VertexSim3Expmap* v1 = static_cast<const VertexSim3Expmap*>(_vertices[0]);
+    Sim3 C(_measurement);
+      Sim3 error_=C*v1->estimate().inverse();
+      _error = error_.log();
+  }
+
+//  virtual void linearizeOplus();
+};
+
 
   /**
  * \brief 7D edge between two Vertex7

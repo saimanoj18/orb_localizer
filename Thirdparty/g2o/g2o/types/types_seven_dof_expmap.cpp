@@ -40,6 +40,10 @@ namespace g2o {
   {
   }
 
+//  EdgeSim3OnlyPose::EdgeSim3OnlyPose() :
+//      BaseUnaryEdge<7, Sim3, VertexSim3Expmap>()
+//  {
+//  }
 
   bool VertexSim3Expmap::read(std::istream& is)
   {
@@ -83,6 +87,16 @@ namespace g2o {
       os << _principle_point1[i] << " ";
     }
     return os.good();
+  }
+
+  bool EdgeSim3OnlyPose::read(std::istream& is)
+  {
+    return true;
+  }
+
+  bool EdgeSim3OnlyPose::write(std::ostream& os) const
+  {
+    return true;
   }
 
   bool EdgeSim3::read(std::istream& is)

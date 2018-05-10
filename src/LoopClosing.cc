@@ -95,10 +95,6 @@ void LoopClosing::Run()
                 {
                     Localize();
                 }
-//                else
-//                {
-//                    Relocalize();
-//                }
             }
         }    
    
@@ -485,7 +481,19 @@ bool LoopClosing::ComputeSE3()
 //        }
 //    }
 
-    if(g2oresult<10)return true;
+
+    if(g2oresult<10){
+        // add partial pose
+        Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
+        Eigen::Vector3d eigt = mg2oScw.translation();
+        double s = mg2oScw.scale();
+        eigt *=(1./s); //[R t/s;0 1]
+
+        cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt); 
+        mpCurrentKF->mPartialPose = correctedTcw;
+        mpCurrentKF->m3DMapMatched = true;
+        return true;
+    }
     else return false;
 }
 
@@ -551,6 +559,15 @@ void LoopClosing::Localize()
                 g2o::Sim3 g2oCorrectedSiw = g2oSic*mg2oScw;
                 //Pose corrected with the Sim3 of the loop closure
                 CorrectedSim3[pKFi]=g2oCorrectedSiw;
+                
+                // add partial pose
+                Eigen::Matrix3d eigR = g2oCorrectedSiw.rotation().toRotationMatrix();
+                Eigen::Vector3d eigt = g2oCorrectedSiw.translation();
+                double s = g2oCorrectedSiw.scale();
+                eigt *=(1./s); //[R t/s;0 1]
+                cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt); 
+                pKFi->mPartialPose = correctedTiw;
+                pKFi->m3DMapMatched = true;
             }
 
             cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);
@@ -609,9 +626,8 @@ void LoopClosing::Localize()
 
     }
 
-    map<KeyFrame*, set<KeyFrame*> > LoopConnections;
     // Optimize graph
-    Optimizer::OptimizeEssentialGraph(mpMap, mpMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections, mbFixScale);
+    Optimizer::OptimizeEssentialGraph(mpMap, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, mbFixScale);
 
 
     mpMap->InformNewBigChange();
@@ -620,187 +636,6 @@ void LoopClosing::Localize()
     mpLocalMapper->Release();    
 
     mLastLoopKFid = mpCurrentKF->mnId;       
-
-}
-
-void LoopClosing::Relocalize()
-{
-
-    //ICP between local map and 3d prior map
-    //create matching clouds
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ> (mpCurrentKF->mGtVelodyne));
-    vector<MapPoint*> vpMPsi = mpCurrentKF->GetMapPointMatches();
-    for(size_t iMP=0, endMPi = vpMPsi.size(); iMP<endMPi; iMP++)
-    {
-        MapPoint* pMPi = vpMPsi[iMP];
-        if(!pMPi)
-            continue;
-        if(pMPi->isBad())
-            continue;
-        if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
-            continue;
-
-        // Project with non-corrected pose and project back with corrected pose
-        cv::Mat P3Dw = pMPi->GetWorldPos();
-        Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
-        pcl::PointXYZ pts;
-        pts.x = eigP3Dw[0];
-        pts.y = eigP3Dw[1];
-        pts.z = eigP3Dw[2];
-        cloud_in->push_back(pts);
-    }
-
-    if(vpMPsi.size()>10000)
-    {
-        pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-        icp.setInputCloud(cloud_in);
-        icp.setInputTarget(cloud_out);
-        pcl::PointCloud<pcl::PointXYZ> Final;
-        icp.align(Final);
-
-
-        cout<<icp.getFitnessScore()<<endl;
-        cout<<icp.getFinalTransformation()<<endl;
-
-        if(icp.hasConverged() && icp.getFitnessScore()<10^(-15))
-        {
-            Eigen::Matrix4f icp_result = icp.getFinalTransformation();
-            Eigen::Matrix3d eigR = icp_result.block<3,3>(0,0).matrix().cast <double> ();
-            Eigen::Vector3d eigt = icp_result.block<3,1>(0,3).matrix().cast <double> ();
-            cv::Mat Tww = Converter::toCvSE3(eigR,eigt);
-            cv::Mat new_T = mpCurrentKF->GetPose()*Tww.inv();
-            cv::Mat new_R = new_T.rowRange(0,3).colRange(0,3);
-            cv::Mat new_t = new_T.rowRange(0,3).col(3);
-            g2o::Sim3 g2oSww(Converter::toMatrix3d(new_R),Converter::toVector3d(new_t),1.0);
-            mg2oScw = g2oSww;
-
-            //Modify 'CorrectLoop' for the localization
-            //Camera poses are relocated
-
-            // Send a stop signal to Local Mapping
-            // Avoid new keyframes are inserted while correcting the loop
-            mpLocalMapper->RequestStop();
-
-            // If a Global Bundle Adjustment is running, abort it
-            if(isRunningGBA())
-            {
-                unique_lock<mutex> lock(mMutexGBA);
-                mbStopGBA = true;
-
-                mnFullBAIdx++;
-
-                if(mpThreadGBA)
-                {
-                    mpThreadGBA->detach();
-                    delete mpThreadGBA;
-                }
-            }
-
-            // Wait until Local Mapping has effectively stopped
-            while(!mpLocalMapper->isStopped())
-            {
-                usleep(1000);
-            }
-
-            // Ensure current keyframe is updated
-            mpCurrentKF->UpdateConnections();
-
-
-            // Retrive keyframes connected to the current keyframe and compute corrected Sim3 pose by propagation
-            mvpCurrentConnectedKFs = mpCurrentKF->GetVectorCovisibleKeyFrames();
-            mvpCurrentConnectedKFs.push_back(mpCurrentKF);
-
-            KeyFrameAndPose CorrectedSim3, NonCorrectedSim3;
-            CorrectedSim3[mpCurrentKF]=mg2oScw;
-            cv::Mat Twc = mpCurrentKF->GetPoseInverse();
-
-
-            {
-                // Get Map Mutex
-                unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
-
-                for(vector<KeyFrame*>::iterator vit=mvpCurrentConnectedKFs.begin(), vend=mvpCurrentConnectedKFs.end(); vit!=vend; vit++)
-                {
-                    KeyFrame* pKFi = *vit;
-
-                    cv::Mat Tiw = pKFi->GetPose();
-
-                    if(pKFi!=mpCurrentKF)
-                    {
-                        cv::Mat Tic = Tiw*Twc;
-                        cv::Mat Ric = Tic.rowRange(0,3).colRange(0,3);
-                        cv::Mat tic = Tic.rowRange(0,3).col(3);
-                        g2o::Sim3 g2oSic(Converter::toMatrix3d(Ric),Converter::toVector3d(tic),1.0);
-                        g2o::Sim3 g2oCorrectedSiw = g2oSic*mg2oScw;
-                        //Pose corrected with the Sim3 of the loop closure
-                        CorrectedSim3[pKFi]=g2oCorrectedSiw;
-                    }
-
-                    cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);
-                    cv::Mat tiw = Tiw.rowRange(0,3).col(3);
-                    g2o::Sim3 g2oSiw(Converter::toMatrix3d(Riw),Converter::toVector3d(tiw),1.0);
-                    //Pose without correction
-                    NonCorrectedSim3[pKFi]=g2oSiw;
-                }
-
-                // Correct all MapPoints obsrved by current keyframe and neighbors, so that they align with the other side of the loop
-                for(KeyFrameAndPose::iterator mit=CorrectedSim3.begin(), mend=CorrectedSim3.end(); mit!=mend; mit++)
-                {
-                    KeyFrame* pKFi = mit->first;
-                    g2o::Sim3 g2oCorrectedSiw = mit->second;
-                    g2o::Sim3 g2oCorrectedSwi = g2oCorrectedSiw.inverse();
-
-                    g2o::Sim3 g2oSiw =NonCorrectedSim3[pKFi];
-
-                    vector<MapPoint*> vpMPsi = pKFi->GetMapPointMatches();
-                    for(size_t iMP=0, endMPi = vpMPsi.size(); iMP<endMPi; iMP++)
-                    {
-                        MapPoint* pMPi = vpMPsi[iMP];
-                        if(!pMPi)
-                            continue;
-                        if(pMPi->isBad())
-                            continue;
-                        if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
-                            continue;
-
-                        // Project with non-corrected pose and project back with corrected pose
-                        cv::Mat P3Dw = pMPi->GetWorldPos();
-                        Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
-                        Eigen::Matrix<double,3,1> eigCorrectedP3Dw = g2oCorrectedSwi.map(g2oSiw.map(eigP3Dw));
-
-                        cv::Mat cvCorrectedP3Dw = Converter::toCvMat(eigCorrectedP3Dw);
-                        pMPi->SetWorldPos(cvCorrectedP3Dw);
-                        pMPi->mnCorrectedByKF = mpCurrentKF->mnId;
-                        pMPi->mnCorrectedReference = pKFi->mnId;
-                        pMPi->UpdateNormalAndDepth();
-                    }
-
-                    // Update keyframe pose with corrected Sim3. First transform Sim3 to SE3 (scale translation)
-                    Eigen::Matrix3d eigR = g2oCorrectedSiw.rotation().toRotationMatrix();
-                    Eigen::Vector3d eigt = g2oCorrectedSiw.translation();
-                    double s = g2oCorrectedSiw.scale();
-
-                    eigt *=(1./s); //[R t/s;0 1]
-
-                    cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt);
-
-                    pKFi->SetPose(correctedTiw);
-
-                    // Make sure connections are updated
-                    pKFi->UpdateConnections();
-                }
-
-            }
-
-            mpMap->InformNewBigChange();
-
-            // Loop closed. Release Local Mapping.
-            mpLocalMapper->Release();    
-
-            mLastLoopKFid = mpCurrentKF->mnId;
-        }
-    }       
 
 }
 

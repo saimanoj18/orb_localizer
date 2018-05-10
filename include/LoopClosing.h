@@ -105,8 +105,6 @@ protected:
 
     void Localize();//YJ
 
-    void Relocalize();//YJ
-
     void CorrectLoop();
 
     void ResetIfRequested();

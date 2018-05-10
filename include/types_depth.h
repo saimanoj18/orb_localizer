@@ -138,7 +138,7 @@ class EdgeXYZDepth : public  BaseBinaryEdge<1, double, VertexSBAPointXYZ, Vertex
           _information<< v1->ImageInfo[idx];
           _error = obsz-e1;
           _measurement = 1.0f; 
-//         if(_error[0]>10.0 || _error[0]<-10.0)
+//         if(_error[0]>5.0 || _error[0]<-5.0)
 //         {
 //           _error<< 0.0f;
 //           _measurement = 0.0f;
