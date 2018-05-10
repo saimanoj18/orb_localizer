@@ -426,59 +426,67 @@ bool LoopClosing::ComputeSE3()
     delete [] depth_info;
  
 
-    if(g2oresult>9 || index<1000)
-    {
-        //Relocalization by ICP between local map and 3d prior map
-        //create matching clouds
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ> (mpCurrentKF->mGtVelodyne));
-        vector<MapPoint*> vpMPsi = mpCurrentKF->GetMapPointMatches();
-        for(size_t iMP=0, endMPi = vpMPsi.size(); iMP<endMPi; iMP++)
-        {
-            MapPoint* pMPi = vpMPsi[iMP];
-            if(!pMPi)
-                continue;
-            if(pMPi->isBad())
-                continue;
-            if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
-                continue;
+//    if(g2oresult>9 || index<1000)
+//    {
+//        //Relocalization by ICP between local map and 3d prior map
+//        //create matching clouds
+//        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
+//        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ> (mpCurrentKF->mGtVelodyne));
+//        mvpCurrentConnectedKFs = mpCurrentKF->GetVectorCovisibleKeyFrames();
+//        mvpCurrentConnectedKFs.push_back(mpCurrentKF);
+//        for(vector<KeyFrame*>::iterator vit=mvpCurrentConnectedKFs.begin(), vend=mvpCurrentConnectedKFs.end(); vit!=vend; vit++)
+//        {
+//            KeyFrame* pKFi = *vit;
+//            vector<MapPoint*> vpMPsi = pKFi->GetMapPointMatches();
+//            for(size_t iMP=0, endMPi = vpMPsi.size(); iMP<endMPi; iMP++)
+//            {
+//                MapPoint* pMPi = vpMPsi[iMP];
+//                if(!pMPi)
+//                    continue;
+//                if(pMPi->isBad())
+//                    continue;
+//                if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
+//                    continue;
 
-            // Project with non-corrected pose and project back with corrected pose
-            cv::Mat P3Dw = pMPi->GetWorldPos();
-            Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
-            pcl::PointXYZ pts;
-            pts.x = eigP3Dw[0];
-            pts.y = eigP3Dw[1];
-            pts.z = eigP3Dw[2];
-            cloud_in->push_back(pts);
-        }
-        cout<<"local map points: "<<vpMPsi.size()<<endl;
-        if(vpMPsi.size()>1000)
-        {
-            pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-            icp.setInputCloud(cloud_in);
-            icp.setInputTarget(cloud_out);
-            pcl::PointCloud<pcl::PointXYZ> Final;
-            icp.align(Final);
+//                // Project with non-corrected pose and project back with corrected pose
+//                cv::Mat P3Dw = pMPi->GetWorldPos();
+//                Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
+//                pcl::PointXYZ pts;
+//                pts.x = eigP3Dw[0];
+//                pts.y = eigP3Dw[1];
+//                pts.z = eigP3Dw[2];
+//                cloud_in->push_back(pts);
+//            }
+//        }
+//        cout<<"local map points: "<<cloud_in->points.size()<<endl;
+
+//        if(cloud_in->points.size()>1000)
+//        {
+//            pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+//            icp.setInputCloud(cloud_in);
+//            icp.setInputTarget(cloud_out);
+//            pcl::PointCloud<pcl::PointXYZ> Final;
+//            icp.align(Final);
 
 
-            cout<<icp.getFitnessScore()<<endl;
-            cout<<icp.getFinalTransformation()<<endl;
-            
-            Eigen::Matrix4f icp_result = icp.getFinalTransformation();
-            Eigen::Matrix3d eigR = icp_result.block<3,3>(0,0).matrix().cast <double> ();
-            Eigen::Vector3d eigt = icp_result.block<3,1>(0,3).matrix().cast <double> ();
-            cv::Mat Tww = Converter::toCvSE3(eigR,eigt);
-            cv::Mat new_T = mpCurrentKF->GetPose()*Tww.inv();
-            cv::Mat new_R = new_T.rowRange(0,3).colRange(0,3);
-            cv::Mat new_t = new_T.rowRange(0,3).col(3);
-            g2o::Sim3 g2oSww(Converter::toMatrix3d(new_R),Converter::toVector3d(new_t),1.0);
-            if(icp.hasConverged() && icp.getFitnessScore()<5.0)mg2oScw = g2oSww;
-            else if(index<1000 && icp.hasConverged())mg2oScw = g2oSww;
-        }
-    }
+//            cout<<icp.getFitnessScore()<<endl;
+//            cout<<icp.getFinalTransformation()<<endl;
+//            
+//            Eigen::Matrix4f icp_result = icp.getFinalTransformation();
+//            Eigen::Matrix3d eigR = icp_result.block<3,3>(0,0).matrix().cast <double> ();
+//            Eigen::Vector3d eigt = icp_result.block<3,1>(0,3).matrix().cast <double> ();
+//            cv::Mat Tww = Converter::toCvSE3(eigR,eigt);
+//            cv::Mat new_T = mpCurrentKF->GetPose()*Tww.inv();
+//            cv::Mat new_R = new_T.rowRange(0,3).colRange(0,3);
+//            cv::Mat new_t = new_T.rowRange(0,3).col(3);
+//            g2o::Sim3 g2oSww(Converter::toMatrix3d(new_R),Converter::toVector3d(new_t),1.0);
+//            if(icp.hasConverged() && icp.getFitnessScore()<5.0)mg2oScw = g2oSww;
+//            else if(index<1000 && icp.hasConverged())mg2oScw = g2oSww;
+//        }
+//    }
 
-    return true;
+    if(g2oresult<10)return true;
+    else return false;
 }
 
 void LoopClosing::Localize()
@@ -600,6 +608,11 @@ void LoopClosing::Localize()
         }
 
     }
+
+    map<KeyFrame*, set<KeyFrame*> > LoopConnections;
+    // Optimize graph
+    Optimizer::OptimizeEssentialGraph(mpMap, mpMatchedKF, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, LoopConnections, mbFixScale);
+
 
     mpMap->InformNewBigChange();
 
