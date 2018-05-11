@@ -483,15 +483,15 @@ bool LoopClosing::ComputeSE3()
 
 
     if(g2oresult<10 && index>1000){
-        // add partial pose
-        Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
-        Eigen::Vector3d eigt = mg2oScw.translation();
-        double s = mg2oScw.scale();
-        eigt *=(1./s); //[R t/s;0 1]
+//        // add partial pose
+//        Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
+//        Eigen::Vector3d eigt = mg2oScw.translation();
+//        double s = mg2oScw.scale();
+//        eigt *=(1./s); //[R t/s;0 1]
 
-        cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt); 
-        mpCurrentKF->mPartialPose = correctedTcw;
-        mpCurrentKF->m3DMapMatched = true;
+//        cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt); 
+//        mpCurrentKF->mPartialPose = correctedTcw;
+//        mpCurrentKF->m3DMapMatched = true;
         return true;
     }
     else return false;
@@ -560,14 +560,14 @@ void LoopClosing::Localize()
                 //Pose corrected with the Sim3 of the loop closure
                 CorrectedSim3[pKFi]=g2oCorrectedSiw;
                 
-                // add partial pose
-                Eigen::Matrix3d eigR = g2oCorrectedSiw.rotation().toRotationMatrix();
-                Eigen::Vector3d eigt = g2oCorrectedSiw.translation();
-                double s = g2oCorrectedSiw.scale();
-                eigt *=(1./s); //[R t/s;0 1]
-                cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt); 
-                pKFi->mPartialPose = correctedTiw;
-                pKFi->m3DMapMatched = true;
+//                // add partial pose
+//                Eigen::Matrix3d eigR = g2oCorrectedSiw.rotation().toRotationMatrix();
+//                Eigen::Vector3d eigt = g2oCorrectedSiw.translation();
+//                double s = g2oCorrectedSiw.scale();
+//                eigt *=(1./s); //[R t/s;0 1]
+//                cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt); 
+//                pKFi->mPartialPose = correctedTiw;
+//                pKFi->m3DMapMatched = true;
             }
 
             cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);
