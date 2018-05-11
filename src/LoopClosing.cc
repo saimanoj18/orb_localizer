@@ -409,7 +409,7 @@ bool LoopClosing::ComputeSE3()
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
 
-    int g2oresult = optimizer.optimize(10);
+    int g2oresult = optimizer.optimize(100);
     cout<<g2oresult<<endl;
 
     // Recover optimized Sim3
@@ -482,7 +482,7 @@ bool LoopClosing::ComputeSE3()
 //    }
 
 
-    if(g2oresult<10){
+    if(g2oresult<10 && index>1000){
         // add partial pose
         Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
         Eigen::Vector3d eigt = mg2oScw.translation();

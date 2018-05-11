@@ -1091,6 +1091,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
     const int minFeat = 100;
 
     const Eigen::Matrix<double,7,7> matLambda = Eigen::Matrix<double,7,7>::Identity();
+    Eigen::Matrix<double,7,7> info;
 
     // Set KeyFrame vertices
     for(size_t i=0, iend=vpKFs.size(); i<iend;i++)
@@ -1116,39 +1117,27 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
             g2o::Sim3 Siw(Rcw,tcw,1.0);
             vScw[nIDi] = Siw;
             VSim3->setEstimate(Siw);
-        }
-
-        if(pKF->mnId==0)
             VSim3->setFixed(true);
-
-//        if(pKF->mnId==1)
-//            VSim3->setFixed(true);
-
-//        if(pKF==pCurKF)
-//            VSim3->setFixed(true);
-
+        }
 
         VSim3->setId(nIDi);
         VSim3->setMarginalized(false);
         VSim3->_fix_scale = bFixScale;
-
         optimizer.addVertex(VSim3);
-
         vpVertices[nIDi]=VSim3;
 
-        if(pKF->m3DMapMatched)
-        {
-            // partial pose edges
-            cv::Mat Rcw = pKF->mPartialPose.rowRange(0,3).colRange(0,3);
-            cv::Mat tcw = pKF->mPartialPose.rowRange(0,3).col(3);
-            g2o::Sim3 g2oScw(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
-            g2o::EdgeSim3OnlyPose* e = new g2o::EdgeSim3OnlyPose();
-            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
-            e->setMeasurement(g2oScw);
-            e->information() = matLambda;
-//            if(pKF==pCurKF)e->information() = matLambda*10.0;
-            optimizer.addEdge(e);
-        }        
+//        if(pKF->m3DMapMatched && it!=CorrectedSim3.end())
+//        {
+//            // partial pose edges
+//            cv::Mat Rcw = pKF->mPartialPose.rowRange(0,3).colRange(0,3);
+//            cv::Mat tcw = pKF->mPartialPose.rowRange(0,3).col(3);
+//            g2o::Sim3 g2oScw(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
+//            g2o::EdgeSim3OnlyPose* e = new g2o::EdgeSim3OnlyPose();
+//            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
+//            e->setMeasurement(g2oScw);
+//            e->information() = matLambda;
+//            optimizer.addEdge(e);
+//        }        
     }
 
     // Set normal edges
@@ -1178,10 +1167,14 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
 
             LoopClosing::KeyFrameAndPose::const_iterator itj = NonCorrectedSim3.find(pParentKF);
 
-            if(itj!=NonCorrectedSim3.end())
+            if(itj!=NonCorrectedSim3.end()){
                 Sjw = itj->second;
-            else
+//                info = 0.1*Eigen::Matrix<double,7,7>::Identity();
+            }
+            else{
                 Sjw = vScw[nIDj];
+//                info = Eigen::Matrix<double,7,7>::Identity();
+            } 
 
             g2o::Sim3 Sji = Sjw * Swi;
 
@@ -1190,46 +1183,15 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
             e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
             e->setMeasurement(Sji);
 
-            e->information() = matLambda;
+            e->information() = matLambda;//info;
             optimizer.addEdge(e);
-        }
-
-        // Covisibility graph edges
-        const vector<KeyFrame*> vpConnectedKFs = pKF->GetCovisiblesByWeight(minFeat);
-        for(vector<KeyFrame*>::const_iterator vit=vpConnectedKFs.begin(); vit!=vpConnectedKFs.end(); vit++)
-        {
-            KeyFrame* pKFn = *vit;
-            if(pKFn && pKFn!=pParentKF && !pKF->hasChild(pKFn) )
-            {
-                if(!pKFn->isBad() && pKFn->mnId<pKF->mnId)
-                {
-
-                    g2o::Sim3 Snw;
-
-                    LoopClosing::KeyFrameAndPose::const_iterator itn = NonCorrectedSim3.find(pKFn);
-
-                    if(itn!=NonCorrectedSim3.end())
-                        Snw = itn->second;
-                    else
-                        Snw = vScw[pKFn->mnId];
-
-                    g2o::Sim3 Sni = Snw * Swi;
-
-                    g2o::EdgeSim3* en = new g2o::EdgeSim3();
-                    en->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFn->mnId)));
-                    en->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
-                    en->setMeasurement(Sni);
-                    en->information() = matLambda;
-                    optimizer.addEdge(en);
-                }
-            }
         }
         
     }
 
     // Optimize!
     optimizer.initializeOptimization();
-    optimizer.optimize(20);
+    optimizer.optimize(100);
 
     unique_lock<mutex> lock(pMap->mMutexMapUpdate);
 
