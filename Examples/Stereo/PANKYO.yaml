@@ -28,7 +28,7 @@ Camera.bf: 378.88875272
 Camera.RGB: 1
 
 # Close/Far threshold. Baseline times.
-ThDepth: 35
+ThDepth: 50
 
 # Extrinsic calibration between camera to velodyne
 Camera.ctv00: -0.0858661           

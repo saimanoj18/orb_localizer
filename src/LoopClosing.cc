@@ -481,8 +481,8 @@ bool LoopClosing::ComputeSE3()
 //        }
 //    }
 
-
-    if(g2oresult<10 && index>1000){
+    return true;
+//    if(g2oresult<10 && index>1000){
 //        // add partial pose
 //        Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
 //        Eigen::Vector3d eigt = mg2oScw.translation();
@@ -492,9 +492,9 @@ bool LoopClosing::ComputeSE3()
 //        cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt); 
 //        mpCurrentKF->mPartialPose = correctedTcw;
 //        mpCurrentKF->m3DMapMatched = true;
-        return true;
-    }
-    else return false;
+//        return true;
+//    }
+//    else return false;
 }
 
 void LoopClosing::Localize()
@@ -552,13 +552,13 @@ void LoopClosing::Localize()
 
             if(pKFi!=mpCurrentKF)
             {
-                cv::Mat Tic = Tiw*Twc;
-                cv::Mat Ric = Tic.rowRange(0,3).colRange(0,3);
-                cv::Mat tic = Tic.rowRange(0,3).col(3);
-                g2o::Sim3 g2oSic(Converter::toMatrix3d(Ric),Converter::toVector3d(tic),1.0);
-                g2o::Sim3 g2oCorrectedSiw = g2oSic*mg2oScw;
-                //Pose corrected with the Sim3 of the loop closure
-                CorrectedSim3[pKFi]=g2oCorrectedSiw;
+//                cv::Mat Tic = Tiw*Twc;
+//                cv::Mat Ric = Tic.rowRange(0,3).colRange(0,3);
+//                cv::Mat tic = Tic.rowRange(0,3).col(3);
+//                g2o::Sim3 g2oSic(Converter::toMatrix3d(Ric),Converter::toVector3d(tic),1.0);
+//                g2o::Sim3 g2oCorrectedSiw = g2oSic*mg2oScw;
+//                //Pose corrected with the Sim3 of the loop closure
+//                CorrectedSim3[pKFi]=g2oCorrectedSiw;
                 
 //                // add partial pose
 //                Eigen::Matrix3d eigR = g2oCorrectedSiw.rotation().toRotationMatrix();
@@ -626,8 +626,8 @@ void LoopClosing::Localize()
 
     }
 
-    // Optimize graph
-    Optimizer::OptimizeEssentialGraph(mpMap, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, mbFixScale);
+//    // Optimize graph
+//    Optimizer::OptimizeEssentialGraph(mpMap, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, mbFixScale);
 
 
     mpMap->InformNewBigChange();

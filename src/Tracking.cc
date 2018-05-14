@@ -1328,14 +1328,24 @@ void Tracking::UpdateLocalKeyFrames()
         if(pKF->isBad())
             continue;
 
-        if(it->second>max)
-        {
-            max=it->second;
-            pKFmax=pKF;
-        }
+//        if(it->second>max)
+//        {
+//            max=it->second;
+//            pKFmax=pKF;
+//        }
+//        mvpLocalKeyFrames.push_back(it->first);
+//        pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
 
-        mvpLocalKeyFrames.push_back(it->first);
-        pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+        if(it->second > 10 )//YJ
+        {
+            mvpLocalKeyFrames.push_back(it->first);
+            pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+            if(it->second>max)
+            {
+                max=it->second;
+                pKFmax=pKF;
+            }
+        }
     }
 
 
