@@ -56,6 +56,12 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     float cx = fSettings["Camera.cx"];
     float cy = fSettings["Camera.cy"];
 
+    float scale = 1.0;
+    fx = fx*scale;
+    fy = fy*scale;
+    cx = cx*scale;
+    cy = cy*scale;
+
     cv::Mat K = cv::Mat::eye(3,3,CV_32F);
     K.at<float>(0,0) = fx;
     K.at<float>(1,1) = fy;
@@ -77,6 +83,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     DistCoef.copyTo(mDistCoef);
 
     mbf = fSettings["Camera.bf"];
+    mbf = mbf*scale;
 
     float fps = fSettings["Camera.fps"];
     if(fps==0)
@@ -1328,24 +1335,24 @@ void Tracking::UpdateLocalKeyFrames()
         if(pKF->isBad())
             continue;
 
-//        if(it->second>max)
-//        {
-//            max=it->second;
-//            pKFmax=pKF;
-//        }
-//        mvpLocalKeyFrames.push_back(it->first);
-//        pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
-
-        if(it->second > 10 )//YJ
+        if(it->second>max)
         {
-            mvpLocalKeyFrames.push_back(it->first);
-            pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
-            if(it->second>max)
-            {
-                max=it->second;
-                pKFmax=pKF;
-            }
+            max=it->second;
+            pKFmax=pKF;
         }
+        mvpLocalKeyFrames.push_back(it->first);
+        pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+
+//        if(it->second > 10 )//YJ
+//        {
+//            mvpLocalKeyFrames.push_back(it->first);
+//            pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+//            if(it->second>max)
+//            {
+//                max=it->second;
+//                pKFmax=pKF;
+//            }
+//        }
     }
 
 
@@ -1628,6 +1635,12 @@ void Tracking::ChangeCalibration(const string &strSettingPath)
     float cx = fSettings["Camera.cx"];
     float cy = fSettings["Camera.cy"];
 
+    float scale = 1.0;
+    fx = fx*scale;
+    fy = fy*scale;
+    cx = cx*scale;
+    cy = cy*scale;
+
     cv::Mat K = cv::Mat::eye(3,3,CV_32F);
     K.at<float>(0,0) = fx;
     K.at<float>(1,1) = fy;
@@ -1649,6 +1662,7 @@ void Tracking::ChangeCalibration(const string &strSettingPath)
     DistCoef.copyTo(mDistCoef);
 
     mbf = fSettings["Camera.bf"];
+    mbf = mbf*scale;
 
     Frame::mbInitialComputations = true;
 }

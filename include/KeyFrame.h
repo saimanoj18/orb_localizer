@@ -182,6 +182,7 @@ public:
     cv::Mat mDispImg;
     bool m3DMapMatched;
     cv::Mat mPartialPose;
+    double mMatchInfo;
 
     //BoW
     DBoW2::BowVector mBowVec;

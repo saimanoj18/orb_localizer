@@ -63,8 +63,17 @@ int main(int argc, char **argv)
         // Read left and right images from file
         imLeft = cv::imread(vstrImageLeft[ni],CV_LOAD_IMAGE_UNCHANGED);
         imRight = cv::imread(vstrImageRight[ni],CV_LOAD_IMAGE_UNCHANGED);
-        gtPose = vGTPoses[ni];
+//        cv::resize(imLeft, imLeft, cv::Size(), 0.5, 0.5);
+//        cv::resize(imRight, imRight, cv::Size(), 0.5, 0.5);
+        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+        clahe->setClipLimit(5);
+        clahe->apply(imLeft,imLeft);
+        clahe->apply(imRight,imRight);
 
+
+        
+
+        gtPose = vGTPoses[ni];
         double tframe = vTimestamps[ni];
         
         pcl::PointCloud<pcl::PointXYZ> gtVelodyne;
