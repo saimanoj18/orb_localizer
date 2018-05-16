@@ -329,7 +329,7 @@ bool LoopClosing::ComputeSE3()
 
     /////////////////////////optimization//////////////////////////
     const float deltaHuber = sqrt(10);
-    //solver initialization
+//    //solver initialization
     g2o::SparseOptimizer optimizer;
 //    g2o::BlockSolverX::LinearSolverType * linearSolver;
 //    linearSolver = new g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>();
@@ -337,17 +337,25 @@ bool LoopClosing::ComputeSE3()
 //    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
 //    optimizer.setAlgorithm(solver);
 
-//    typedef g2o::BlockSolver<g2o::BlockSolverTraits<7, 7> > BlockSolver_7_7;
-//    BlockSolver_7_7::LinearSolverType * linearSolver;
-//    linearSolver = new g2o::LinearSolverCholmod<BlockSolver_7_7::PoseMatrixType>();
-//    BlockSolver_7_7* blockSolver = new BlockSolver_7_7(linearSolver);
-//    g2o::OptimizationAlgorithmGaussNewton* solver = new g2o::OptimizationAlgorithmGaussNewton(blockSolver);
+//    g2o::BlockSolver_7_3::LinearSolverType * linearSolver;
+//    linearSolver = new g2o::LinearSolverCSparse<g2o::BlockSolver_7_3::PoseMatrixType>();
+//    g2o::BlockSolver_7_3* blockSolver = new g2o::BlockSolver_7_3(linearSolver);
+//    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
 //    optimizer.setAlgorithm(solver);
 
-    g2o::BlockSolverX::LinearSolverType * linearSolver = new g2o::LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>();
+    g2o::BlockSolverX::LinearSolverType * linearSolver = new g2o::LinearSolverCholmod<g2o::BlockSolverX::PoseMatrixType>();
     g2o::BlockSolverX* blockSolver = new g2o::BlockSolverX(linearSolver);
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
     optimizer.setAlgorithm(solver);
+
+
+//    typedef g2o::BlockSolver< g2o::BlockSolverTraits<-1, -1> >  SlamBlockSolver;
+//    typedef g2o::LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
+//    SlamLinearSolver* linearSolver = new SlamLinearSolver();
+//    linearSolver->setBlockOrdering(false);
+//    SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
+//    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
+//    optimizer.setAlgorithm(solver);
 
     // SET SIMILARITY VERTEX
     g2o::VertexDepth * vSim3 = new g2o::VertexDepth();
@@ -356,10 +364,10 @@ bool LoopClosing::ComputeSE3()
     cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
     cv::Mat tcw = Tcw.rowRange(0,3).col(3);
     g2o::Sim3 g2oS_init(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
-    vSim3->setEstimate(g2oS_init);
     vSim3->setId(0);
-    vSim3->setFixed(false);
     vSim3->setMarginalized(true);
+    vSim3->setEstimate(g2oS_init);
+    vSim3->setFixed(false);
     vSim3->_principle_point[0] = cx;
     vSim3->_principle_point[1] = cy;
     vSim3->_focal_length[0] = fx;
@@ -394,11 +402,13 @@ bool LoopClosing::ComputeSE3()
                 {
                     // SET PointXYZ VERTEX
                     g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
-                    vPoint->setEstimate(pts);
                     vPoint->setId(index);
+                    vPoint->setEstimate(pts);
                     vPoint->setFixed(true);
                     optimizer.addVertex(vPoint);
                     
+                    if(index ==1)
+                    {
                     // Set Edges
                     g2o::EdgeXYZDepth* e01 = new g2o::EdgeXYZDepth();
                     e01->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(index)));
@@ -406,12 +416,12 @@ bool LoopClosing::ComputeSE3()
                     e01->setMeasurement(1.0f);
                     info << depth_info[i_idx];
                     e01->information() = info;
-//                    e01->setInformation(info);
-//                    g2o::RobustKernelHuber* rk1 = new g2o::RobustKernelHuber;
-//                    rk1->setDelta(deltaHuber);
-//                    e01->setRobustKernel(rk1);
+                    e01->setInformation(info);
+                    g2o::RobustKernelHuber* rk1 = new g2o::RobustKernelHuber;
+                    rk1->setDelta(deltaHuber);
+                    e01->setRobustKernel(rk1);
                     optimizer.addEdge(e01);
-
+                    }
                     index++;
                 }
         }
@@ -420,6 +430,8 @@ bool LoopClosing::ComputeSE3()
 
     cout<<index<<endl;
     optimizer.initializeOptimization();
+//    optimizer.computeActiveErrors();
+//    cout<<index<<endl;
     optimizer.setVerbose(true);
     int g2oresult = optimizer.optimize(100);
     cout<<g2oresult<<endl;

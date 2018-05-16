@@ -105,11 +105,13 @@ class LinearSolverCSparse : public LinearSolverCCS<MatrixType>
 
     bool solve(const SparseBlockMatrix<MatrixType>& A, double* x, double* b)
     {
+      
       fillCSparse(A, _symbolicDecomposition != 0);
       // perform symbolic cholesky once
       if (_symbolicDecomposition == 0) {
         computeSymbolicDecomposition(A);
       }
+      
       // re-allocate the temporary workspace for cholesky
       if (_csWorkspaceSize < _ccsA->n) {
         _csWorkspaceSize = 2 * _ccsA->n;
