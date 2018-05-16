@@ -405,7 +405,8 @@ bool LoopClosing::ComputeSE3()
                     e01->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
                     e01->setMeasurement(1.0f);
                     info << depth_info[i_idx];
-                    e01->setInformation(info);
+                    e01->information() = info;
+//                    e01->setInformation(info);
 //                    g2o::RobustKernelHuber* rk1 = new g2o::RobustKernelHuber;
 //                    rk1->setDelta(deltaHuber);
 //                    e01->setRobustKernel(rk1);
