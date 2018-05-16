@@ -10,4 +10,6 @@
 #  error "g2o requires column major Eigen matrices (see http://eigen.tuxfamily.org/bz/show_bug.cgi?id=422)"
 #endif
 
+#cmakedefine G2O_HAVE_CHOLMOD 1
+
 #endif
