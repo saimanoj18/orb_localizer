@@ -325,6 +325,8 @@ bool LoopClosing::ComputeSE3()
         if (!isfinite(info_denom)) depth_info[i] = 0;
         else if (info_denom<0.001) depth_info[i] = 0.0;
         else depth_info[i] = 10.0/info_denom;
+
+//        if(depth_info[i]<5.0) depth_info[i] = 0.0;
     }
 
     /////////////////////////optimization//////////////////////////
@@ -337,8 +339,14 @@ bool LoopClosing::ComputeSE3()
 //    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
 //    optimizer.setAlgorithm(solver);
 
-    g2o::BlockSolverX::LinearSolverType * linearSolver = new g2o::LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>();
-    g2o::BlockSolverX* blockSolver = new g2o::BlockSolverX(linearSolver);
+//    g2o::BlockSolverX::LinearSolverType * linearSolver = new g2o::LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>();
+//    g2o::BlockSolverX* blockSolver = new g2o::BlockSolverX(linearSolver);
+//    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
+//    optimizer.setAlgorithm(solver);
+
+    g2o::BlockSolver_7_3::LinearSolverType * linearSolver;
+    linearSolver = new g2o::LinearSolverCSparse<g2o::BlockSolver_7_3::PoseMatrixType>();
+    g2o::BlockSolver_7_3* blockSolver = new g2o::BlockSolver_7_3(linearSolver);
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
     optimizer.setAlgorithm(solver);
 
@@ -421,6 +429,12 @@ bool LoopClosing::ComputeSE3()
     g2o::VertexSim3Expmap* vSim3_recov = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(0));
     mg2oScw = vSim3_recov->estimate();
 
+    g2o::SparseBlockMatrixXd spinv;
+    if(optimizer.computeMarginals(spinv, optimizer.vertex(0))){
+    cout << spinv.block(0,0)->eval() << endl;
+    cout << spinv.block(0,0)->eval().inverse() <<endl;
+    }
+
     delete [] depth;
     delete [] depth_gradientX;
     delete [] depth_gradientY;
@@ -431,7 +445,7 @@ bool LoopClosing::ComputeSE3()
     cout<<"activeRobustChi2() "<<matching_err<<endl;
 
 
-    if(matching_err<1000 ){//
+//    if(matching_err<1000 ){//
 
         // add partial pose
         Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
@@ -442,8 +456,8 @@ bool LoopClosing::ComputeSE3()
         cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt); 
         mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, double>(correctedTcw,matching_err));
         return true;
-    }
-    else return false;
+//    }
+//    else return false;
 }
 
 void LoopClosing::Localize()

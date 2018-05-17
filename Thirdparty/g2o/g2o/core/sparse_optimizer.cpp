@@ -231,7 +231,7 @@ namespace g2o{
               break;
             }
           }
-          if (allVerticesOK && !e->allVerticesFixed()) {
+          if (allVerticesOK && !e->allVerticesFixed() ) {// && e->informationData()[0]>0.0
             auxEdgeSet.insert(e);
             levelEdges++;
           }
@@ -451,7 +451,7 @@ namespace g2o{
     _activeEdges.reserve(_activeEdges.size() + eset.size());
     for (HyperGraph::EdgeSet::iterator it = eset.begin(); it != eset.end(); ++it) {
       OptimizableGraph::Edge* e = static_cast<OptimizableGraph::Edge*>(*it);
-      if (!e->allVerticesFixed()) _activeEdges.push_back(e);
+      if (!e->allVerticesFixed() ) _activeEdges.push_back(e);//&& e->informationData()[0]>0.0
     }
     
     // update the index mapping

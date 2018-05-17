@@ -111,8 +111,9 @@ namespace g2o {
     {
       _error<< 0.0f;
       _jacobianOplusXi << 0,0,0;
-      _jacobianOplusXj<<0,0,0,0,0,0,0;
-      _information<<0.0f;
+//      _jacobianOplusXj<<0.0,0.0,0.0,0.0,0.0,0.0,0.0;
+      _jacobianOplusXj<<0.000000001f,0.000000001f,0.000000001f,0.000000001f,0.000000001f,0.000000001f,0.000000001f;
+      _information<< 0.0f;
     }
     else
     {
@@ -148,7 +149,7 @@ namespace g2o {
 
         Matrix<double,1,4> dm;
         dm<<0,0,1.0f,0;
-        _jacobianOplusXi << 0,0,0;
+        _jacobianOplusXi << 0.0,0.0,0.0;
         _jacobianOplusXj.block<1,6>(0,0) = (dm-D_u*K_p)*Tp_note;//-D_u*K_p*Tp_note;//
          
     }

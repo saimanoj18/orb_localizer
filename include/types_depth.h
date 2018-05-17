@@ -106,8 +106,8 @@ class EdgeXYZDepth : public  BaseBinaryEdge<1, double, VertexSBAPointXYZ, Vertex
     virtual bool write(std::ostream& os) const;
     void computeError()
     {
-      const VertexDepth* v1 = static_cast<const VertexDepth*>(_vertices[1]);
-      const VertexSBAPointXYZ* v2 = static_cast<const VertexSBAPointXYZ*>(_vertices[0]);
+      VertexDepth* v1 = static_cast<VertexDepth*>(_vertices[1]);
+      VertexSBAPointXYZ* v2 = static_cast<VertexSBAPointXYZ*>(_vertices[0]);
 
       Vector2d Ipos( v1->cam_map(v1->estimate().map(v2->estimate())) );
       int idx = (int)(((int)Ipos[1])*v1->_width+((int)Ipos[0]));
@@ -129,7 +129,12 @@ class EdgeXYZDepth : public  BaseBinaryEdge<1, double, VertexSBAPointXYZ, Vertex
           _error<< 0.0f;
           _information<< 0.0f;
           _measurement = 0.0f;
-
+     }
+     else if(!std::isfinite(v1->ImageInfo[idx])|| v1->ImageInfo[idx]<=0)
+     {
+          _error<< 0.0f;
+          _information<< 0.0f;
+          _measurement = 0.0f;
      }
       else
       {

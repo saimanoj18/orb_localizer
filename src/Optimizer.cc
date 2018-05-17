@@ -1091,7 +1091,14 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
     const int minFeat = 100;
 
     const Eigen::Matrix<double,7,7> matLambda = Eigen::Matrix<double,7,7>::Identity();
-    Eigen::Matrix<double,7,7> info;
+    Eigen::Matrix<double,7,7> info = Eigen::Matrix<double,7,7>::Identity();
+//    info(0,0) = 10.0;
+//    info(1,1) = 10.0;
+//    info(2,2) = 1.0;
+//    info(3,3) = 0.1;
+//    info(4,4) = 1.0;
+//    info(5,5) = 0.1;
+//    info(6,6) = 100.0;
 
     // Set KeyFrame vertices
     for(size_t i=0, iend=vpKFs.size(); i<iend;i++)
@@ -1137,7 +1144,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
             g2o::EdgeSim3OnlyPose* e = new g2o::EdgeSim3OnlyPose();
             e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
             e->setMeasurement(g2oScw);
-            e->information() = matLambda * (2.0/error);
+            e->information() = info * (2.0/error);
             optimizer.addEdge(e);
         }   
     }
