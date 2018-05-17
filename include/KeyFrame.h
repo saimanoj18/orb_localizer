@@ -180,13 +180,9 @@ public:
     //YJ
     pcl::PointCloud<pcl::PointXYZ> mGtVelodyne;
     cv::Mat mDispImg;
-//    bool m3DMapMatched;
-//    cv::Mat mPartialPose;
-//    double mMatchInfo;
-    std::vector<std::pair<cv::Mat, double> >mPartialPose;
-
-//    std::vector<cv::Mat> mPartialPose;
-//    std::vector<double> mMatchInfo;
+    bool m3DMapMatched;
+    cv::Mat mPartialPose;
+    double mMatchInfo;
 
     //BoW
     DBoW2::BowVector mBowVec;

@@ -40,10 +40,6 @@ find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 find_package(libLAS REQUIRED)
-find_package(Cholmod)
-find_package(BLAS)
-find_package(LAPACK)
-find_package(CSparse)
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -52,8 +48,6 @@ ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${PCL_INCLUDE_DIRS}
 ${libLAS_INCLUDE_DIRS}
-${CHOLMOD_INCLUDE_DIR}
-${CSPARSE_INCLUDE_DIR}
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -87,10 +81,6 @@ ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
 ${libLAS_LIBRARIES}
 ${PCL_LIBRARIES}
-${CHOLMOD_LIBRARY}
-${CSPARSE_LIBRARY}
-#${LAPACK_LIBRARIES_DIR}
-#${BLAS_LIBRARIES_DIR}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
 ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
 )
@@ -131,5 +121,4 @@ target_link_libraries(mono_kitti ${PROJECT_NAME})
 add_executable(mono_euroc
 Examples/Monocular/mono_euroc.cc)
 target_link_libraries(mono_euroc ${PROJECT_NAME})
-
 
