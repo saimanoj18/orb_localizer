@@ -337,6 +337,11 @@ bool LoopClosing::ComputeSE3()
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
     optimizer.setAlgorithm(solver);
 
+//    g2o::BlockSolverX::LinearSolverType * linearSolver = new g2o::LinearSolverCholmod<g2o::BlockSolverX::PoseMatrixType>();
+//    g2o::BlockSolverX* blockSolver = new g2o::BlockSolverX(linearSolver);
+//    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
+//    optimizer.setAlgorithm(solver);
+
     // SET SIMILARITY VERTEX
     g2o::VertexDepth * vSim3 = new g2o::VertexDepth();
     vSim3->_fix_scale= false;

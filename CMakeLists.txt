@@ -37,6 +37,7 @@ if(NOT OpenCV_FOUND)
 endif()
 
 find_package(Eigen3 3.1.0 REQUIRED)
+find_package(CSparse)
 find_package(Pangolin REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 find_package(libLAS REQUIRED)
@@ -45,6 +46,7 @@ include_directories(
 ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/include
 ${EIGEN3_INCLUDE_DIR}
+${CSPARSE_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${PCL_INCLUDE_DIRS}
 ${libLAS_INCLUDE_DIRS}
@@ -78,6 +80,7 @@ src/types_depth.cc
 target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
+${CSPARSE_LIBRARY}
 ${Pangolin_LIBRARIES}
 ${libLAS_LIBRARIES}
 ${PCL_LIBRARIES}

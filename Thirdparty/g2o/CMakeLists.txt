@@ -74,6 +74,8 @@ ELSE(EIGEN3_FOUND)
   SET(G2O_EIGEN3_INCLUDE "" CACHE PATH "Directory of Eigen3")
 ENDIF(EIGEN3_FOUND)
 
+FIND_PACKAGE(CSparse)
+
 # Generate config.h
 SET(G2O_CXX_COMPILER "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER}")
 configure_file(config.h.in ${g2o_SOURCE_DIR}/config.h)
