@@ -85,7 +85,8 @@ INCLUDE_DIRECTORIES(
 ${g2o_SOURCE_DIR}/core
 ${g2o_SOURCE_DIR}/types
 ${g2o_SOURCE_DIR}/stuff 
-${G2O_EIGEN3_INCLUDE})
+${G2O_EIGEN3_INCLUDE}
+${CSPARSE_INCLUDE_DIR})
 
 # Include the subdirectories
 ADD_LIBRARY(g2o ${G2O_LIB_TYPE}
@@ -172,5 +173,10 @@ g2o/stuff/os_specific.c
 g2o/stuff/os_specific.h
 g2o/stuff/string_tools.cpp
 g2o/stuff/property.cpp       
-g2o/stuff/property.h       
+g2o/stuff/property.h
+##solvers
+g2o/solvers/g2o_csparse_api.h
+g2o/solvers/g2o_csparse_extension_api.h
+g2o/solvers/csparse_helper.cpp
+g2o/solvers/csparse_helper.h       
 )
