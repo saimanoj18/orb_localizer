@@ -107,6 +107,8 @@ protected:
 
     void CorrectLoop();
 
+    double matching_err;//YJ
+
     void ResetIfRequested();
     bool mbResetRequested;
     std::mutex mMutexReset;

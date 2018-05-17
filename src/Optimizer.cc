@@ -1127,18 +1127,19 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
         optimizer.addVertex(VSim3);
         vpVertices[nIDi]=VSim3; 
 
-        if(pKF->m3DMapMatched)
-        {
-            // partial pose edges
-            cv::Mat Rcw = pKF->mPartialPose.rowRange(0,3).colRange(0,3);
-            cv::Mat tcw = pKF->mPartialPose.rowRange(0,3).col(3);
+        // partial pose edges
+        for ( std::vector<std::pair<cv::Mat,double>>::iterator itt = pKF->mPartialPose.begin() ; itt != pKF->mPartialPose.end(); itt++){
+            cv::Mat pose = itt->first;
+            double error = itt->second;
+            cv::Mat Rcw = pose.rowRange(0,3).colRange(0,3);
+            cv::Mat tcw = pose.rowRange(0,3).col(3);
             g2o::Sim3 g2oScw(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
             g2o::EdgeSim3OnlyPose* e = new g2o::EdgeSim3OnlyPose();
             e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
             e->setMeasurement(g2oScw);
-            e->information() = matLambda * 0.1;// * pKF->mMatchInfo;
+            e->information() = matLambda * (2.0/error);
             optimizer.addEdge(e);
-        }      
+        }   
     }
 
     // Set normal edges
