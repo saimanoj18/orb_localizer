@@ -89,6 +89,16 @@ cv::Mat Converter::toCvMat(const Eigen::Matrix<double,3,1> &m)
     return cvMat.clone();
 }
 
+cv::Mat Converter::toCvMat(const Eigen::Matrix<double,7,7> &m)
+{
+    cv::Mat cvMat(7,7,CV_32F);
+    for(int i=0;i<7;i++)
+        for(int j=0; j<7; j++)
+            cvMat.at<float>(i,j)=m(i,j);
+
+    return cvMat.clone();
+}
+
 cv::Mat Converter::toCvSE3(const Eigen::Matrix<double,3,3> &R, const Eigen::Matrix<double,3,1> &t)
 {
     cv::Mat cvMat = cv::Mat::eye(4,4,CV_32F);
@@ -130,6 +140,21 @@ Eigen::Matrix<double,3,3> Converter::toMatrix3d(const cv::Mat &cvMat3)
     M << cvMat3.at<float>(0,0), cvMat3.at<float>(0,1), cvMat3.at<float>(0,2),
          cvMat3.at<float>(1,0), cvMat3.at<float>(1,1), cvMat3.at<float>(1,2),
          cvMat3.at<float>(2,0), cvMat3.at<float>(2,1), cvMat3.at<float>(2,2);
+
+    return M;
+}
+
+Eigen::Matrix<double,7,7> Converter::toMatrix7d(const cv::Mat &cvMat7)
+{
+    Eigen::Matrix<double,7,7> M;
+
+    M << cvMat7.at<float>(0,0), cvMat7.at<float>(0,1), cvMat7.at<float>(0,2), cvMat7.at<float>(0,3), cvMat7.at<float>(0,4), cvMat7.at<float>(0,5), cvMat7.at<float>(0,6),
+         cvMat7.at<float>(1,0), cvMat7.at<float>(1,1), cvMat7.at<float>(1,2), cvMat7.at<float>(1,3), cvMat7.at<float>(1,4), cvMat7.at<float>(1,5), cvMat7.at<float>(1,6),
+         cvMat7.at<float>(2,0), cvMat7.at<float>(2,1), cvMat7.at<float>(2,2), cvMat7.at<float>(2,3), cvMat7.at<float>(2,4), cvMat7.at<float>(2,5), cvMat7.at<float>(2,6),
+         cvMat7.at<float>(3,0), cvMat7.at<float>(3,1), cvMat7.at<float>(3,2), cvMat7.at<float>(3,3), cvMat7.at<float>(3,4), cvMat7.at<float>(3,5), cvMat7.at<float>(3,6),
+         cvMat7.at<float>(4,0), cvMat7.at<float>(4,1), cvMat7.at<float>(4,2), cvMat7.at<float>(4,3), cvMat7.at<float>(4,4), cvMat7.at<float>(4,5), cvMat7.at<float>(4,6),
+         cvMat7.at<float>(5,0), cvMat7.at<float>(5,1), cvMat7.at<float>(5,2), cvMat7.at<float>(5,3), cvMat7.at<float>(5,4), cvMat7.at<float>(5,5), cvMat7.at<float>(5,6),
+         cvMat7.at<float>(6,0), cvMat7.at<float>(6,1), cvMat7.at<float>(6,2), cvMat7.at<float>(6,3), cvMat7.at<float>(6,4), cvMat7.at<float>(6,5), cvMat7.at<float>(6,6);
 
     return M;
 }

@@ -180,7 +180,7 @@ public:
     //YJ
     pcl::PointCloud<pcl::PointXYZ> mGtVelodyne;
     cv::Mat mDispImg;
-    std::vector<std::pair<cv::Mat, double> >mPartialPose;
+    std::vector<std::pair<cv::Mat, cv::Mat>>mPartialPose;
 
     //BoW
     DBoW2::BowVector mBowVec;

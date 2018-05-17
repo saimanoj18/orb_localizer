@@ -109,7 +109,7 @@ protected:
 
     void CorrectLoop();
 
-    double matching_err;//YJ
+    cv::Mat mInformation;//YJ
 
     void ResetIfRequested();
     bool mbResetRequested;

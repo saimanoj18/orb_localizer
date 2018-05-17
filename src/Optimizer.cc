@@ -1092,13 +1092,6 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
 
     const Eigen::Matrix<double,7,7> matLambda = Eigen::Matrix<double,7,7>::Identity();
     Eigen::Matrix<double,7,7> info = Eigen::Matrix<double,7,7>::Identity();
-//    info(0,0) = 10.0;
-//    info(1,1) = 10.0;
-//    info(2,2) = 1.0;
-//    info(3,3) = 0.1;
-//    info(4,4) = 1.0;
-//    info(5,5) = 0.1;
-//    info(6,6) = 100.0;
 
     // Set KeyFrame vertices
     for(size_t i=0, iend=vpKFs.size(); i<iend;i++)
@@ -1135,16 +1128,16 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
         vpVertices[nIDi]=VSim3; 
 
         // partial pose edges
-        for ( std::vector<std::pair<cv::Mat,double>>::iterator itt = pKF->mPartialPose.begin() ; itt != pKF->mPartialPose.end(); itt++){
+        for ( std::vector<std::pair<cv::Mat,cv::Mat>>::iterator itt = pKF->mPartialPose.begin() ; itt != pKF->mPartialPose.end(); itt++){
             cv::Mat pose = itt->first;
-            double error = itt->second;
+            info = Converter::toMatrix7d(itt->second);
             cv::Mat Rcw = pose.rowRange(0,3).colRange(0,3);
             cv::Mat tcw = pose.rowRange(0,3).col(3);
             g2o::Sim3 g2oScw(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
             g2o::EdgeSim3OnlyPose* e = new g2o::EdgeSim3OnlyPose();
             e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
             e->setMeasurement(g2oScw);
-            e->information() = info * (2.0/error);
+            e->information() = info;
             optimizer.addEdge(e);
         }   
     }

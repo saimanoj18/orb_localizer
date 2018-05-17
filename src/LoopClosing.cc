@@ -390,7 +390,7 @@ bool LoopClosing::ComputeSE3()
         
         
         if ( xyz[2]>0.0f ){//&& xyz[2]<30.0f
-                if (Ipos[0]<vSim3->_width && Ipos[0]>=0 && Ipos[1]<vSim3->_height && Ipos[1]>=0 && depth_info[i_idx]>5.0)
+                if (Ipos[0]<vSim3->_width && Ipos[0]>=0 && Ipos[1]<vSim3->_height && Ipos[1]>=0 && depth_info[i_idx]>10.0)
                 {
                     // SET PointXYZ VERTEX
                     g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
@@ -430,9 +430,10 @@ bool LoopClosing::ComputeSE3()
     mg2oScw = vSim3_recov->estimate();
 
     g2o::SparseBlockMatrixXd spinv;
+    Eigen::Matrix<double,7,7> marginal_cov;
     if(optimizer.computeMarginals(spinv, optimizer.vertex(0))){
-    cout << spinv.block(0,0)->eval() << endl;
-    cout << spinv.block(0,0)->eval().inverse() <<endl;
+        marginal_cov = spinv.block(0,0)->eval().inverse();
+        mInformation = Converter::toCvMat(marginal_cov);
     }
 
     delete [] depth;
@@ -441,9 +442,11 @@ bool LoopClosing::ComputeSE3()
     delete [] depth_info;
  
 
-    matching_err = optimizer.activeRobustChi2()/(double) index;
+    double matching_err = optimizer.activeRobustChi2()/(double) index;
     cout<<"activeRobustChi2() "<<matching_err<<endl;
 
+    mInformation = 0.000000001*mInformation;///matching_err;
+    cout << mInformation <<endl;
 
 //    if(matching_err<1000 ){//
 
@@ -454,7 +457,7 @@ bool LoopClosing::ComputeSE3()
         eigt *=(1./s); //[R t/s;0 1]
 
         cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt); 
-        mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, double>(correctedTcw,matching_err));
+        mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
         return true;
 //    }
 //    else return false;
@@ -529,7 +532,7 @@ void LoopClosing::Localize()
                 double s = g2oCorrectedSiw.scale();
                 eigt *=(1./s); //[R t/s;0 1]
                 cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt); 
-                pKFi->mPartialPose.push_back(std::pair<cv::Mat, double>(correctedTiw, matching_err));
+                pKFi->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTiw, mInformation));
             }
 
             cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);
