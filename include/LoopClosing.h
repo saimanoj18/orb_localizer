@@ -33,9 +33,18 @@
 #include <mutex>
 #include "Thirdparty/g2o/g2o/core/block_solver.h"
 #include "Thirdparty/g2o/g2o/core/optimization_algorithm_levenberg.h"
+#include "Thirdparty/g2o/g2o/core/optimization_algorithm_gauss_newton.h"
 #include "Thirdparty/g2o/g2o/solvers/linear_solver_eigen.h"
+#include "Thirdparty/g2o/g2o/solvers/linear_solver_cholmod.h"
+
+#include "Thirdparty/g2o/g2o/solvers/csparse_helper.h"
+#include "Thirdparty/g2o/g2o/solvers/g2o_csparse_api.h"
+#include "Thirdparty/g2o/g2o/solvers/g2o_csparse_extension_api.h"
+#include "Thirdparty/g2o/g2o/solvers/linear_solver_csparse.h"
+
 #include "Thirdparty/g2o/g2o/core/robust_kernel_impl.h"
 #include "Thirdparty/g2o/g2o/solvers/linear_solver_dense.h"
+
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
 #include "types_depth.h"
 
@@ -106,6 +115,8 @@ protected:
     void Localize();//YJ
 
     void CorrectLoop();
+
+    double matching_err;//YJ
 
     void ResetIfRequested();
     bool mbResetRequested;

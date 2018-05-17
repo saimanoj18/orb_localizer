@@ -74,6 +74,14 @@ ELSE(EIGEN3_FOUND)
   SET(G2O_EIGEN3_INCLUDE "" CACHE PATH "Directory of Eigen3")
 ENDIF(EIGEN3_FOUND)
 
+# Find Cholmod
+FIND_PACKAGE(Cholmod)
+FIND_PACKAGE(BLAS)
+FIND_PACKAGE(LAPACK)
+
+# Find CSparse
+FIND_PACKAGE(CSparse)
+
 # Generate config.h
 SET(G2O_CXX_COMPILER "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER}")
 configure_file(config.h.in ${g2o_SOURCE_DIR}/config.h)
@@ -83,7 +91,8 @@ INCLUDE_DIRECTORIES(
 ${g2o_SOURCE_DIR}/core
 ${g2o_SOURCE_DIR}/types
 ${g2o_SOURCE_DIR}/stuff 
-${G2O_EIGEN3_INCLUDE})
+${G2O_EIGEN3_INCLUDE}
+${CSPARSE_INCLUDE_DIR})
 
 # Include the subdirectories
 ADD_LIBRARY(g2o ${G2O_LIB_TYPE}
@@ -151,6 +160,8 @@ g2o/core/optimization_algorithm_with_hessian.cpp
 g2o/core/optimization_algorithm_with_hessian.h
 g2o/core/optimization_algorithm_levenberg.cpp 
 g2o/core/optimization_algorithm_levenberg.h
+g2o/core/optimization_algorithm_gauss_newton.cpp 
+g2o/core/optimization_algorithm_gauss_newton.h
 g2o/core/jacobian_workspace.cpp 
 g2o/core/jacobian_workspace.h
 g2o/core/robust_kernel.cpp 
@@ -170,5 +181,13 @@ g2o/stuff/os_specific.c
 g2o/stuff/os_specific.h
 g2o/stuff/string_tools.cpp
 g2o/stuff/property.cpp       
-g2o/stuff/property.h       
+g2o/stuff/property.h
+g2o/stuff/g2o_stuff_api.h
+g2o/stuff/sparse_helper.cpp
+g2o/stuff/sparse_helper.h
+##solver
+g2o/solvers/g2o_csparse_api.h
+g2o/solvers/g2o_csparse_extension_api.h
+g2o/solvers/csparse_helper.cpp
+g2o/solvers/csparse_helper.h
 )

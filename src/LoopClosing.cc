@@ -329,13 +329,33 @@ bool LoopClosing::ComputeSE3()
 
     /////////////////////////optimization//////////////////////////
     const float deltaHuber = sqrt(10);
-    //solver initialization
+//    //solver initialization
     g2o::SparseOptimizer optimizer;
-    g2o::BlockSolverX::LinearSolverType * linearSolver;
-    linearSolver = new g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>();
-    g2o::BlockSolverX * solver_ptr = new g2o::BlockSolverX(linearSolver);
-    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+//    g2o::BlockSolverX::LinearSolverType * linearSolver;
+//    linearSolver = new g2o::LinearSolverDense<g2o::BlockSolverX::PoseMatrixType>();
+//    g2o::BlockSolverX * solver_ptr = new g2o::BlockSolverX(linearSolver);
+//    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+//    optimizer.setAlgorithm(solver);
+
+//    g2o::BlockSolver_7_3::LinearSolverType * linearSolver;
+//    linearSolver = new g2o::LinearSolverCSparse<g2o::BlockSolver_7_3::PoseMatrixType>();
+//    g2o::BlockSolver_7_3* blockSolver = new g2o::BlockSolver_7_3(linearSolver);
+//    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
+//    optimizer.setAlgorithm(solver);
+
+    g2o::BlockSolverX::LinearSolverType * linearSolver = new g2o::LinearSolverCholmod<g2o::BlockSolverX::PoseMatrixType>();
+    g2o::BlockSolverX* blockSolver = new g2o::BlockSolverX(linearSolver);
+    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
     optimizer.setAlgorithm(solver);
+
+
+//    typedef g2o::BlockSolver< g2o::BlockSolverTraits<-1, -1> >  SlamBlockSolver;
+//    typedef g2o::LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
+//    SlamLinearSolver* linearSolver = new SlamLinearSolver();
+//    linearSolver->setBlockOrdering(false);
+//    SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
+//    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
+//    optimizer.setAlgorithm(solver);
 
     // SET SIMILARITY VERTEX
     g2o::VertexDepth * vSim3 = new g2o::VertexDepth();
@@ -344,8 +364,9 @@ bool LoopClosing::ComputeSE3()
     cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
     cv::Mat tcw = Tcw.rowRange(0,3).col(3);
     g2o::Sim3 g2oS_init(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
-    vSim3->setEstimate(g2oS_init);
     vSim3->setId(0);
+    vSim3->setMarginalized(true);
+    vSim3->setEstimate(g2oS_init);
     vSim3->setFixed(false);
     vSim3->_principle_point[0] = cx;
     vSim3->_principle_point[1] = cy;
@@ -381,34 +402,37 @@ bool LoopClosing::ComputeSE3()
                 {
                     // SET PointXYZ VERTEX
                     g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
-                    vPoint->setEstimate(pts);
                     vPoint->setId(index);
+                    vPoint->setEstimate(pts);
                     vPoint->setFixed(true);
                     optimizer.addVertex(vPoint);
                     
+                    if(index ==1)
+                    {
                     // Set Edges
                     g2o::EdgeXYZDepth* e01 = new g2o::EdgeXYZDepth();
                     e01->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(index)));
                     e01->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
                     e01->setMeasurement(1.0f);
                     info << depth_info[i_idx];
+                    e01->information() = info;
                     e01->setInformation(info);
                     g2o::RobustKernelHuber* rk1 = new g2o::RobustKernelHuber;
                     rk1->setDelta(deltaHuber);
                     e01->setRobustKernel(rk1);
-
                     optimizer.addEdge(e01);
-
+                    }
                     index++;
                 }
         }
 
     }
-    
+
     cout<<index<<endl;
     optimizer.initializeOptimization();
-    optimizer.computeActiveErrors();
-
+//    optimizer.computeActiveErrors();
+//    cout<<index<<endl;
+    optimizer.setVerbose(true);
     int g2oresult = optimizer.optimize(100);
     cout<<g2oresult<<endl;
 
@@ -416,11 +440,19 @@ bool LoopClosing::ComputeSE3()
     g2o::VertexSim3Expmap* vSim3_recov = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(0));
     mg2oScw = vSim3_recov->estimate();
 
+    g2o::SparseBlockMatrixXd spinv;
+//    if(optimizer.computeMarginals(spinv, optimizer.vertex(0))){
+//    optimizer.computeMarginals(spinv, optimizer.vertex(0));
+//    cout << "covariance\n" << spinv << endl;
+//    cout << spinv.block(0,0)->eval() << endl;
+//    }
+
     delete [] depth;
     delete [] depth_gradientX;
     delete [] depth_gradientY;
     delete [] depth_info;
  
+
 
 //    if(g2oresult>9 || index<1000)
 //    {
@@ -482,7 +514,12 @@ bool LoopClosing::ComputeSE3()
 //    }
 
 //    return true;
-    if(g2oresult>4 && index>1000 ){//
+    matching_err = optimizer.activeRobustChi2()/(double) index;
+    cout<<"activeRobustChi2() "<<matching_err<<endl;
+
+
+    if(matching_err<1000 ){//
+
         // add partial pose
         Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
         Eigen::Vector3d eigt = mg2oScw.translation();
@@ -490,9 +527,12 @@ bool LoopClosing::ComputeSE3()
         eigt *=(1./s); //[R t/s;0 1]
 
         cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt); 
-        mpCurrentKF->mPartialPose = correctedTcw;
-        mpCurrentKF->m3DMapMatched = true;
-        mpCurrentKF->mMatchInfo = (double) g2oresult;
+//        mpCurrentKF->mPartialPose = correctedTcw;
+//        mpCurrentKF->m3DMapMatched = true;
+//        mpCurrentKF->mMatchInfo = (double) matching_err;
+//        mpCurrentKF->mPartialPose.push_back(correctedTcw);
+//        mpCurrentKF->mMatchInfo.push_back(matching_err);
+        mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, double>(correctedTcw,matching_err));
         return true;
     }
     else return false;
@@ -567,9 +607,13 @@ void LoopClosing::Localize()
                 double s = g2oCorrectedSiw.scale();
                 eigt *=(1./s); //[R t/s;0 1]
                 cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt); 
-                pKFi->mPartialPose = correctedTiw;
-                pKFi->m3DMapMatched = true;
-                pKFi->mMatchInfo = mpCurrentKF->mMatchInfo;
+//                pKFi->mPartialPose = correctedTiw;
+//                pKFi->m3DMapMatched = true;
+//                pKFi->mMatchInfo = mpCurrentKF->mMatchInfo;
+
+//                pKFi->mPartialPose.push_back(correctedTiw);
+//                pKFi->mMatchInfo.push_back(mpCurrentKF->mMatchInfo);
+                pKFi->mPartialPose.push_back(std::pair<cv::Mat, double>(correctedTiw, matching_err));
             }
 
             cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);
