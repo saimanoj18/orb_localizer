@@ -105,7 +105,7 @@ protected:
 
     void SearchAndFuse(const KeyFrameAndPose &CorrectedPosesMap);
 
-    void Localize();//YJ
+    void Localize(bool confident);//YJ
 
     void CorrectLoop();
 

@@ -91,10 +91,7 @@ void LoopClosing::Run()
         {
             if(DetectLocalize())
             {
-                if(ComputeSE3())
-                {
-                    Localize();
-                }
+                    Localize(ComputeSE3());
             }
         }    
    
@@ -134,7 +131,7 @@ bool LoopClosing::DetectLocalize()
     }
 
 //    //If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
-//    if(mpCurrentKF->mnId<mLastLoopKFid+2)
+//    if(mpCurrentKF->mnId<mLastLoopKFid+10)
 //    {
 //        mpKeyFrameDB->add(mpCurrentKF);
 //        mpCurrentKF->SetErase();
@@ -339,20 +336,20 @@ bool LoopClosing::ComputeSE3()
 //    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
 //    optimizer.setAlgorithm(solver);
 
-//    g2o::BlockSolverX::LinearSolverType * linearSolver = new g2o::LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>();
-//    g2o::BlockSolverX* blockSolver = new g2o::BlockSolverX(linearSolver);
-//    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
-//    optimizer.setAlgorithm(solver);
-
-    g2o::BlockSolver_7_3::LinearSolverType * linearSolver;
-    linearSolver = new g2o::LinearSolverCSparse<g2o::BlockSolver_7_3::PoseMatrixType>();
-    g2o::BlockSolver_7_3* blockSolver = new g2o::BlockSolver_7_3(linearSolver);
+    g2o::BlockSolverX::LinearSolverType * linearSolver = new g2o::LinearSolverCSparse<g2o::BlockSolverX::PoseMatrixType>();
+    g2o::BlockSolverX* blockSolver = new g2o::BlockSolverX(linearSolver);
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
     optimizer.setAlgorithm(solver);
 
+//    g2o::BlockSolver_7_3::LinearSolverType * linearSolver;
+//    linearSolver = new g2o::LinearSolverCSparse<g2o::BlockSolver_7_3::PoseMatrixType>();
+//    g2o::BlockSolver_7_3* blockSolver = new g2o::BlockSolver_7_3(linearSolver);
+//    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(blockSolver);
+//    optimizer.setAlgorithm(solver);
+
     // SET SIMILARITY VERTEX
     g2o::VertexDepth * vSim3 = new g2o::VertexDepth();
-    vSim3->_fix_scale= false;
+    vSim3->_fix_scale= true;
     cv::Mat Tcw = mpCurrentKF->GetPose();
     cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
     cv::Mat tcw = Tcw.rowRange(0,3).col(3);
@@ -360,6 +357,7 @@ bool LoopClosing::ComputeSE3()
     vSim3->setEstimate(g2oS_init);
     vSim3->setId(0);
     vSim3->setFixed(false);
+//    vSim3->setMarginalized(false);
     vSim3->_principle_point[0] = cx;
     vSim3->_principle_point[1] = cy;
     vSim3->_focal_length[0] = fx;
@@ -390,13 +388,14 @@ bool LoopClosing::ComputeSE3()
         
         
         if ( xyz[2]>0.0f ){//&& xyz[2]<30.0f
-                if (Ipos[0]<vSim3->_width && Ipos[0]>=0 && Ipos[1]<vSim3->_height && Ipos[1]>=0 && depth_info[i_idx]>10.0)
+                if (Ipos[0]<vSim3->_width && Ipos[0]>=0 && Ipos[1]<vSim3->_height && Ipos[1]>=0 && depth_info[i_idx]>1.0)
                 {
                     // SET PointXYZ VERTEX
                     g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
                     vPoint->setEstimate(pts);
                     vPoint->setId(index);
                     vPoint->setFixed(true);
+//                    vPoint->setMarginalized(true);
                     optimizer.addVertex(vPoint);
                     
                     // Set Edges
@@ -448,22 +447,23 @@ bool LoopClosing::ComputeSE3()
     mInformation = 0.000000001*mInformation;///matching_err;
     cout << mInformation <<endl;
 
-//    if(matching_err<1000 ){//
+    // add partial pose
+    Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
+    Eigen::Vector3d eigt = mg2oScw.translation();
+    double s = mg2oScw.scale();
+    cout<<"scale: "<<s<<endl;
+    eigt *=(1./s); //[R t/s;0 1]
 
-        // add partial pose
-        Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
-        Eigen::Vector3d eigt = mg2oScw.translation();
-        double s = mg2oScw.scale();
-        eigt *=(1./s); //[R t/s;0 1]
+    cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt); 
+    mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
 
-        cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt); 
-        mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
+    if(matching_err<400 ){//
         return true;
-//    }
-//    else return false;
+    }
+    else return false;
 }
 
-void LoopClosing::Localize()
+void LoopClosing::Localize(bool confident)
 {
     //Modify 'CorrectLoop' for the localization
     //Camera poses are relocated
@@ -526,13 +526,13 @@ void LoopClosing::Localize()
                 //Pose corrected with the Sim3 of the loop closure
                 CorrectedSim3[pKFi]=g2oCorrectedSiw;
                 
-                // add partial pose
-                Eigen::Matrix3d eigR = g2oCorrectedSiw.rotation().toRotationMatrix();
-                Eigen::Vector3d eigt = g2oCorrectedSiw.translation();
-                double s = g2oCorrectedSiw.scale();
-                eigt *=(1./s); //[R t/s;0 1]
-                cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt); 
-                pKFi->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTiw, mInformation));
+//                // add partial pose
+//                Eigen::Matrix3d eigR = g2oCorrectedSiw.rotation().toRotationMatrix();
+//                Eigen::Vector3d eigt = g2oCorrectedSiw.translation();
+//                double s = g2oCorrectedSiw.scale();
+//                eigt *=(1./s); //[R t/s;0 1]
+//                cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt); 
+//                pKFi->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTiw, mInformation));
             }
 
             cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);
@@ -591,18 +591,30 @@ void LoopClosing::Localize()
 
     }
 
+    if(!confident){
     // Optimize graph
     Optimizer::OptimizeEssentialGraph(mpMap, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, mbFixScale);
 
-
     mpMap->InformNewBigChange();
+    }
+
+//    if(!confident)
+//    {
+//        // Launch a new thread to perform Global Bundle Adjustment
+//        mbRunningGBA = true;
+//        mbFinishedGBA = false;
+//        mbStopGBA = false;
+//        mpThreadGBA = new thread(&LoopClosing::RunGlobalBundleAdjustment,this,mpCurrentKF->mnId); 
+//    }
+
 
     // Loop closed. Release Local Mapping.
-    mpLocalMapper->Release();    
+    mpLocalMapper->Release();  
 
     mLastLoopKFid = mpCurrentKF->mnId;       
 
 }
+
 
 bool LoopClosing::ComputeSim3()
 {

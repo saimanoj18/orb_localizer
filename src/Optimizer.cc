@@ -1109,7 +1109,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
         {
             vScw[nIDi] = it->second;
             VSim3->setEstimate(it->second);
-            VSim3->setMarginalized(false);
+//            VSim3->setMarginalized(false);
         }
         else
         {
@@ -1118,8 +1118,8 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
             g2o::Sim3 Siw(Rcw,tcw,1.0);
             vScw[nIDi] = Siw;
             VSim3->setEstimate(Siw);
-            VSim3->setFixed(true);
-            VSim3->setMarginalized(true);
+//            VSim3->setFixed(true);
+//            VSim3->setMarginalized(true);
         }
 
         VSim3->setId(nIDi);
@@ -1141,7 +1141,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
             optimizer.addEdge(e);
         }   
     }
-
+    bool is_lm_i, is_lm_j; 
     // Set normal edges
     for(size_t i=0, iend=vpKFs.size(); i<iend; i++)
     {
@@ -1153,10 +1153,14 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
 
         LoopClosing::KeyFrameAndPose::const_iterator iti = NonCorrectedSim3.find(pKF);
 
-        if(iti!=NonCorrectedSim3.end())
+        if(iti!=NonCorrectedSim3.end()){
             Swi = (iti->second).inverse();
-        else
+            is_lm_i = true;
+        }
+        else{
             Swi = vScw[nIDi].inverse();
+            is_lm_i = false;
+        }
 
         KeyFrame* pParentKF = pKF->GetParent();
 
@@ -1171,9 +1175,11 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
 
             if(itj!=NonCorrectedSim3.end()){
                 Sjw = itj->second;
+                is_lm_j = true;
             }
             else{
                 Sjw = vScw[nIDj];
+                is_lm_j = false;
             } 
 
             g2o::Sim3 Sji = Sjw * Swi;
@@ -1182,8 +1188,9 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
             e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDj)));
             e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
             e->setMeasurement(Sji);
-
-            e->information() = matLambda;//info;
+            e->information() = matLambda*0.01;
+//            if(is_lm_i || is_lm_j)e->information() = matLambda*0.1;
+//            else e->information() = matLambda*0.01;//info;
             optimizer.addEdge(e);
         }
         
@@ -1196,11 +1203,11 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
     unique_lock<mutex> lock(pMap->mMutexMapUpdate);
 
     // SE3 Pose Recovering. Sim3:[sR t;0 1] -> SE3:[R t/s;0 1]
-    for(LoopClosing::KeyFrameAndPose::const_iterator mit=CorrectedSim3.begin(), mend=CorrectedSim3.end(); mit!=mend; mit++)
+    for(size_t i=0, iend=vpKFs.size(); i<iend;i++)
     {
-        KeyFrame* pKFi = mit->first;
+        KeyFrame* pKF = vpKFs[i];
 
-        const int nIDi = pKFi->mnId;
+        const int nIDi = pKF->mnId;
 
         g2o::VertexSim3Expmap* VSim3 = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(nIDi));
         g2o::Sim3 CorrectedSiw =  VSim3->estimate();
@@ -1213,7 +1220,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
 
         cv::Mat Tiw = Converter::toCvSE3(eigR,eigt);
 
-        pKFi->SetPose(Tiw);
+        pKF->SetPose(Tiw);
     }
 
     // Correct points. Transform to "non-optimized" reference keyframe pose and transform back with optimized pose
@@ -1249,63 +1256,6 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
 
         pMP->UpdateNormalAndDepth();
     }
-
-
-
-
-//    // SE3 Pose Recovering. Sim3:[sR t;0 1] -> SE3:[R t/s;0 1]
-//    for(size_t i=0;i<vpKFs.size();i++)
-//    {
-//        KeyFrame* pKFi = vpKFs[i];
-
-//        const int nIDi = pKFi->mnId;
-
-//        g2o::VertexSim3Expmap* VSim3 = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(nIDi));
-//        g2o::Sim3 CorrectedSiw =  VSim3->estimate();
-//        vCorrectedSwc[nIDi]=CorrectedSiw.inverse();
-//        Eigen::Matrix3d eigR = CorrectedSiw.rotation().toRotationMatrix();
-//        Eigen::Vector3d eigt = CorrectedSiw.translation();
-//        double s = CorrectedSiw.scale();
-
-//        eigt *=(1./s); //[R t/s;0 1]
-
-//        cv::Mat Tiw = Converter::toCvSE3(eigR,eigt);
-
-//        pKFi->SetPose(Tiw);
-//    }
-
-//    // Correct points. Transform to "non-optimized" reference keyframe pose and transform back with optimized pose
-//    for(size_t i=0, iend=vpMPs.size(); i<iend; i++)
-//    {
-//        MapPoint* pMP = vpMPs[i];
-
-//        if(pMP->isBad())
-//            continue;
-
-//        int nIDr;
-//        if(pMP->mnCorrectedByKF==pCurKF->mnId)
-//        {
-//            nIDr = pMP->mnCorrectedReference;
-//        }
-//        else
-//        {
-//            KeyFrame* pRefKF = pMP->GetReferenceKeyFrame();
-//            nIDr = pRefKF->mnId;
-//        }
-
-
-//        g2o::Sim3 Srw = vScw[nIDr];
-//        g2o::Sim3 correctedSwr = vCorrectedSwc[nIDr];
-
-//        cv::Mat P3Dw = pMP->GetWorldPos();
-//        Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
-//        Eigen::Matrix<double,3,1> eigCorrectedP3Dw = correctedSwr.map(Srw.map(eigP3Dw));
-
-//        cv::Mat cvCorrectedP3Dw = Converter::toCvMat(eigCorrectedP3Dw);
-//        pMP->SetWorldPos(cvCorrectedP3Dw);
-
-//        pMP->UpdateNormalAndDepth();
-//    }
 
 }
 

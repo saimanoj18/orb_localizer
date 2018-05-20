@@ -151,6 +151,7 @@ namespace g2o {
         dm<<0,0,1.0f,0;
         _jacobianOplusXi << 0.0,0.0,0.0;
         _jacobianOplusXj.block<1,6>(0,0) = (dm-D_u*K_p)*Tp_note;//-D_u*K_p*Tp_note;//
+        _jacobianOplusXj(0,6) = 100.0;//0.000000001f;
          
     }
 
