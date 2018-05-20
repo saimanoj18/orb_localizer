@@ -181,6 +181,8 @@ public:
     pcl::PointCloud<pcl::PointXYZ> mGtVelodyne;
     cv::Mat mDispImg;
     std::vector<std::pair<cv::Mat, cv::Mat>>mPartialPose;
+    cv::Mat mCurPose;
+    cv::Mat mCurCov;
 
     //BoW
     DBoW2::BowVector mBowVec;

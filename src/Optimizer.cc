@@ -1113,6 +1113,8 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
         }
         else
         {
+            KeyFrame* pParentKF = pKF->GetParent();
+            
             Eigen::Matrix<double,3,3> Rcw = Converter::toMatrix3d(pKF->GetRotation());
             Eigen::Matrix<double,3,1> tcw = Converter::toVector3d(pKF->GetTranslation());
             g2o::Sim3 Siw(Rcw,tcw,1.0);
@@ -1122,24 +1124,39 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
 //            VSim3->setMarginalized(true);
         }
 
+        if(nIDi == 0)VSim3->setFixed(true);
+
         VSim3->setId(nIDi);
         VSim3->_fix_scale = bFixScale;
         optimizer.addVertex(VSim3);
-        vpVertices[nIDi]=VSim3; 
+        vpVertices[nIDi]=VSim3;
 
-        // partial pose edges
-        for ( std::vector<std::pair<cv::Mat,cv::Mat>>::iterator itt = pKF->mPartialPose.begin() ; itt != pKF->mPartialPose.end(); itt++){
-            cv::Mat pose = itt->first;
-            info = Converter::toMatrix7d(itt->second);
+        if(it!=CorrectedSim3.end())
+        {
+            info = Converter::toMatrix7d(pKF->mCurCov);
             cv::Mat Rcw = pose.rowRange(0,3).colRange(0,3);
             cv::Mat tcw = pose.rowRange(0,3).col(3);
             g2o::Sim3 g2oScw(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
             g2o::EdgeSim3OnlyPose* e = new g2o::EdgeSim3OnlyPose();
             e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
             e->setMeasurement(g2oScw);
-            e->information() = info;
-            optimizer.addEdge(e);
-        }   
+            e->information() = matLambda;
+            optimizer.addEdge(e);            
+        } 
+
+//        // partial pose edges
+//        for ( std::vector<std::pair<cv::Mat,cv::Mat>>::iterator itt = pKF->mPartialPose.begin() ; itt != pKF->mPartialPose.end(); itt++){
+//            cv::Mat pose = itt->first;
+//            info = Converter::toMatrix7d(itt->second);
+//            cv::Mat Rcw = pose.rowRange(0,3).colRange(0,3);
+//            cv::Mat tcw = pose.rowRange(0,3).col(3);
+//            g2o::Sim3 g2oScw(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
+//            g2o::EdgeSim3OnlyPose* e = new g2o::EdgeSim3OnlyPose();
+//            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
+//            e->setMeasurement(g2oScw);
+//            e->information() = info;
+//            optimizer.addEdge(e);
+//        }   
     }
     bool is_lm_i, is_lm_j; 
     // Set normal edges
@@ -1188,9 +1205,9 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
             e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDj)));
             e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
             e->setMeasurement(Sji);
-//            e->information() = matLambda*0.01;
-            if(is_lm_i || is_lm_j)e->information() = matLambda*0.1;
-            else e->information() = matLambda*0.01;//info;
+//            e->information() = matLambda;
+            if(is_lm_i || is_lm_j)e->information() = matLambda*0.01;
+            else e->information() = matLambda*100;//info;
             optimizer.addEdge(e);
         }
         

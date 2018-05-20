@@ -390,7 +390,7 @@ bool LoopClosing::ComputeSE3()
         
         
         if ( xyz[2]>0.0f ){//&& xyz[2]<30.0f
-                if (Ipos[0]<vSim3->_width && Ipos[0]>=0 && Ipos[1]<vSim3->_height && Ipos[1]>=0 && depth_info[i_idx]>1.0)
+                if (Ipos[0]<vSim3->_width && Ipos[0]>=0 && Ipos[1]<vSim3->_height && Ipos[1]>=0 && depth_info[i_idx]>5.0)
                 {
                     // SET PointXYZ VERTEX
                     g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
@@ -446,7 +446,7 @@ bool LoopClosing::ComputeSE3()
     double matching_err = optimizer.activeRobustChi2()/(double) index;
     cout<<"activeRobustChi2() "<<matching_err<<endl;
 
-    mInformation = 0.000000001*mInformation/matching_err;
+    mInformation = 0.000000001*mInformation;
     cout << mInformation <<endl;
 
     // add partial pose
@@ -455,12 +455,14 @@ bool LoopClosing::ComputeSE3()
     double s = mg2oScw.scale();
     cout<<"scale: "<<s<<endl;
     eigt *=(1./s); //[R t/s;0 1]
-
+    cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt); 
 
 //    if(matching_err<500 ){//
 
-        cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt); 
-        mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
+
+//        mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
+        mpCurrentKF->mCurPose = correctedTcw;
+        mpCurrentKF->mCurCov = mInformation;
         return true;
 //    }
 //    return false;
@@ -584,13 +586,15 @@ void LoopClosing::Localize(bool confident)
                 //Pose corrected with the Sim3 of the loop closure
                 CorrectedSim3[pKFi]=g2oCorrectedSiw;
                 
-//                // add partial pose
-//                Eigen::Matrix3d eigR = g2oCorrectedSiw.rotation().toRotationMatrix();
-//                Eigen::Vector3d eigt = g2oCorrectedSiw.translation();
-//                double s = g2oCorrectedSiw.scale();
-//                eigt *=(1./s); //[R t/s;0 1]
-//                cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt); 
+                // add partial pose
+                Eigen::Matrix3d eigR = g2oCorrectedSiw.rotation().toRotationMatrix();
+                Eigen::Vector3d eigt = g2oCorrectedSiw.translation();
+                double s = g2oCorrectedSiw.scale();
+                eigt *=(1./s); //[R t/s;0 1]
+                cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt); 
 //                pKFi->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTiw, mInformation));
+                pKFi->mCurPose = correctedTiw;
+                pKFi->mCurCov = mInformation;
             }
 
             cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);
@@ -652,7 +656,6 @@ void LoopClosing::Localize(bool confident)
 //    if(!confident){
     // Optimize graph
     Optimizer::OptimizeEssentialGraph(mpMap, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, mbFixScale);
-
     mpMap->InformNewBigChange();
 //    }
 
