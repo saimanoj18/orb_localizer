@@ -1343,7 +1343,7 @@ void Tracking::UpdateLocalKeyFrames()
         mvpLocalKeyFrames.push_back(it->first);
         pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
 
-//        if(it->second > 10 )//YJ
+//        if(it->second > 20 )//YJ
 //        {
 //            mvpLocalKeyFrames.push_back(it->first);
 //            pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;

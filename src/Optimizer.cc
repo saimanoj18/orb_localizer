@@ -1204,9 +1204,9 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
             e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDj)));
             e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
             e->setMeasurement(Sji);
-//            e->information() = matLambda;
-            if(is_lm_i || is_lm_j)e->information() = matLambda*0.01;
-            else e->information() = matLambda*100;//info;
+            e->information() = matLambda*0.01;
+//            if(is_lm_i || is_lm_j)e->information() = matLambda*0.01;
+//            else e->information() = matLambda*100;//info;
             optimizer.addEdge(e);
         }
         
@@ -1224,6 +1224,10 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
         KeyFrame* pKF = vpKFs[i];
 
         const int nIDi = pKF->mnId;
+
+        LoopClosing::KeyFrameAndPose::const_iterator it = CorrectedSim3.find(pKF);
+
+        if(it==CorrectedSim3.end())continue;
 
         g2o::VertexSim3Expmap* VSim3 = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(nIDi));
         g2o::Sim3 CorrectedSiw =  VSim3->estimate();

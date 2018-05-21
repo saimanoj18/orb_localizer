@@ -94,6 +94,7 @@ void LoopClosing::Run()
                 if(ComputeSE3()){
                     Localize(true);
                 }
+//                Localize(ComputeSE3());
             }
         }    
    
@@ -446,7 +447,7 @@ bool LoopClosing::ComputeSE3()
     double matching_err = optimizer.activeRobustChi2()/(double) index;
     cout<<"activeRobustChi2() "<<matching_err<<endl;
 
-    mInformation = 0.000000001*mInformation;
+    mInformation = 0.000000001*mInformation/matching_err;
     cout << mInformation <<endl;
 
     // add partial pose
@@ -455,17 +456,16 @@ bool LoopClosing::ComputeSE3()
     double s = mg2oScw.scale();
     cout<<"scale: "<<s<<endl;
     eigt *=(1./s); //[R t/s;0 1]
-    cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt); 
+    cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
+    mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
+    mpCurrentKF->mCurPose = correctedTcw;
+    mpCurrentKF->mCurCov = mInformation; 
 
-//    if(matching_err<500 ){//
-
-
-        mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
-        mpCurrentKF->mCurPose = correctedTcw;
-        mpCurrentKF->mCurCov = mInformation;
+    if(matching_err<500 ){//
         return true;
-//    }
-//    return false;
+    }
+    return false;
+
 //    else{
 
 //        //Relocalization by ICP between local map and 3d prior map
@@ -653,11 +653,11 @@ void LoopClosing::Localize(bool confident)
 
     }
 
-//    if(!confident){
+    if(confident){
     // Optimize graph
     Optimizer::OptimizeEssentialGraph(mpMap, mpCurrentKF, NonCorrectedSim3, CorrectedSim3, mbFixScale);
     mpMap->InformNewBigChange();
-//    }
+    }
 
 //    if(!confident)
 //    {
