@@ -1113,8 +1113,6 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
         }
         else
         {
-            KeyFrame* pParentKF = pKF->GetParent();
-            
             Eigen::Matrix<double,3,3> Rcw = Converter::toMatrix3d(pKF->GetRotation());
             Eigen::Matrix<double,3,1> tcw = Converter::toVector3d(pKF->GetTranslation());
             g2o::Sim3 Siw(Rcw,tcw,1.0);
@@ -1124,7 +1122,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
 //            VSim3->setMarginalized(true);
         }
 
-        if(nIDi == 0)VSim3->setFixed(true);
+//        if(nIDi == 0)VSim3->setFixed(true);
 
         VSim3->setId(nIDi);
         VSim3->_fix_scale = bFixScale;
@@ -1133,6 +1131,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
 
         if(it!=CorrectedSim3.end())
         {
+            cv::Mat pose = pKF->mCurPose;
             info = Converter::toMatrix7d(pKF->mCurCov);
             cv::Mat Rcw = pose.rowRange(0,3).colRange(0,3);
             cv::Mat tcw = pose.rowRange(0,3).col(3);
@@ -1140,7 +1139,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
             g2o::EdgeSim3OnlyPose* e = new g2o::EdgeSim3OnlyPose();
             e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
             e->setMeasurement(g2oScw);
-            e->information() = matLambda;
+            e->information() = info;
             optimizer.addEdge(e);            
         } 
 
@@ -1154,7 +1153,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
 //            g2o::EdgeSim3OnlyPose* e = new g2o::EdgeSim3OnlyPose();
 //            e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
 //            e->setMeasurement(g2oScw);
-//            e->information() = info;
+//            e->information() = matLambda;
 //            optimizer.addEdge(e);
 //        }   
     }

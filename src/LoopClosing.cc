@@ -460,7 +460,7 @@ bool LoopClosing::ComputeSE3()
 //    if(matching_err<500 ){//
 
 
-//        mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
+        mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
         mpCurrentKF->mCurPose = correctedTcw;
         mpCurrentKF->mCurCov = mInformation;
         return true;
@@ -592,7 +592,7 @@ void LoopClosing::Localize(bool confident)
                 double s = g2oCorrectedSiw.scale();
                 eigt *=(1./s); //[R t/s;0 1]
                 cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt); 
-//                pKFi->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTiw, mInformation));
+                pKFi->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTiw, mInformation));
                 pKFi->mCurPose = correctedTiw;
                 pKFi->mCurCov = mInformation;
             }
