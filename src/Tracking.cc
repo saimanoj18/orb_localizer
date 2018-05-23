@@ -544,6 +544,13 @@ void Tracking::Track()
                 return;
             }
         }
+        
+        if(mpLoopClosing->needRelocalize)//YJ
+        {       
+            mpSystem->Reset();
+            mpLoopClosing->needRelocalize = false;
+            return;
+        }
 
         if(!mCurrentFrame.mpReferenceKF)
             mCurrentFrame.mpReferenceKF = mpReferenceKF;

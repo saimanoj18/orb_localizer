@@ -61,7 +61,7 @@ public:
 
 public:
 
-    LoopClosing(System* pSys, Map* pMap, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale);
+    LoopClosing(Map* pMap, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale);
 
     void SetTracker(Tracking* pTracker);
 
@@ -73,6 +73,8 @@ public:
     void InsertKeyFrame(KeyFrame *pKF);
 
     void RequestReset();
+
+    bool needRelocalize;
 
     // This function will run in a separate thread
     void RunGlobalBundleAdjustment(unsigned long nLoopKF);
@@ -131,7 +133,7 @@ protected:
     LocalMapping *mpLocalMapper;
 
     // System
-    System* mpSystem;
+//    System* mpSystem;
 
     std::list<KeyFrame*> mlpLoopKeyFrameQueue;
 

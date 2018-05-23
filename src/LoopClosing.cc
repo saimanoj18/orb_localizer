@@ -35,10 +35,10 @@
 namespace ORB_SLAM2
 {
 
-LoopClosing::LoopClosing(System* pSys, Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, const bool bFixScale):
-    mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap), mpSystem(pSys),
+LoopClosing::LoopClosing(Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, const bool bFixScale):
+    mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap), //mpSystem(pSys),
     mpKeyFrameDB(pDB), mpORBVocabulary(pVoc), mpMatchedKF(NULL), mLastLoopKFid(0), mbRunningGBA(false), mbFinishedGBA(true),
-    mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0)
+    mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0), needRelocalize(false)
 {
     mnCovisibilityConsistencyTh = 3;
 }
@@ -94,7 +94,10 @@ void LoopClosing::Run()
                 if(ComputeSE3()){
                     Localize(true);
                 }
-                else mpSystem->Reset();
+                else{
+                    needRelocalize = true;                       
+//                    mpSystem->Reset();
+                }
 //                Localize(ComputeSE3());
             }
         }    
@@ -466,7 +469,7 @@ bool LoopClosing::ComputeSE3()
     mpCurrentKF->mCurPose = correctedTcw;
     mpCurrentKF->mCurCov = mInformation; 
 
-    if(matching_err<200 ){//
+    if(matching_err<500 ){//
         return true;
     }
     return false;
