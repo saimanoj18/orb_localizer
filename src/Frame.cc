@@ -335,7 +335,7 @@ void Frame::CreateDispImg(const cv::Mat &imleft, const cv::Mat &imright)
     /////////////////////////disparity map generation////////////////////////////
     mDispImg = cv::Mat::zeros(cv::Size(mnMaxX, mnMaxY), CV_16S);
     cv::Ptr<cv::StereoSGBM> sbm;
-    sbm = cv::StereoSGBM::create(0,16*5,11);
+    sbm = cv::StereoSGBM::create(0,16*5,7);
     sbm->compute(imleft, imright, mDispImg);
 
 //    /////////////////////////depth image generation/////////////////////////////

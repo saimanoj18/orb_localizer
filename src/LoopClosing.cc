@@ -35,8 +35,8 @@
 namespace ORB_SLAM2
 {
 
-LoopClosing::LoopClosing(Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, const bool bFixScale):
-    mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
+LoopClosing::LoopClosing(System* pSys, Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, const bool bFixScale):
+    mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap), mpSystem(pSys),
     mpKeyFrameDB(pDB), mpORBVocabulary(pVoc), mpMatchedKF(NULL), mLastLoopKFid(0), mbRunningGBA(false), mbFinishedGBA(true),
     mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0)
 {
@@ -94,6 +94,7 @@ void LoopClosing::Run()
                 if(ComputeSE3()){
                     Localize(true);
                 }
+                else mpSystem->Reset();
 //                Localize(ComputeSE3());
             }
         }    
@@ -291,6 +292,10 @@ bool LoopClosing::ComputeSE3()
     float* depth_gradientY = new float[width*height]();
     float* depth_info = new float[width*height]();
 
+    double d_var = 0.01;
+    double d_limit = 100.0;
+    double matching_thres = basefx*( 1.0/(d_limit/16.0) + d_var/((float)(d_limit/16.0)*(d_limit/16.0)*(d_limit/16.0)) );
+
     /////////////////////////depth image generation/////////////////////////////
     cv::Mat depth_image = cv::Mat::zeros(cv::Size(width, height), CV_32FC1);
     for(size_t i=0; i<width*height;i++)
@@ -299,8 +304,8 @@ bool LoopClosing::ComputeSE3()
         v = i/width;
         
         int16_t d = mpCurrentKF->mDispImg.at<int16_t>(v,u);            
-        if(d==0 || d!=d) d = 0; //
-        depth[i] = basefx*16.0/((float)d);
+        if(d==0 || d!=d || d<d_limit) d = 0; //
+        depth[i] = basefx*( 1.0/((float)d/16.0) + d_var/((float)(d/16.0)*(d/16.0)*(d/16.0)) );
 
         //depth image            
         depth_image.at<float>(v,u) = depth[i];
@@ -323,7 +328,7 @@ bool LoopClosing::ComputeSE3()
         //depth info
         float info_denom = sqrt(depth_gradientX[i]*depth_gradientX[i]+depth_gradientY[i]*depth_gradientY[i]);
         if (!isfinite(info_denom)) depth_info[i] = 0;
-        else if (info_denom<0.001) depth_info[i] = 0.0;
+        else if (info_denom<0.01) depth_info[i] = 0;
         else depth_info[i] = 10.0/info_denom;
 
 //        if(depth_info[i]<5.0) depth_info[i] = 0.0;
@@ -390,7 +395,7 @@ bool LoopClosing::ComputeSE3()
         int i_idx = ((int)Ipos[1])*vSim3->_width+((int)Ipos[0]);
         
         
-        if ( xyz[2]>0.0f ){//&& xyz[2]<30.0f
+        if ( xyz[2]>0.0f && isfinite(xyz[2]) && xyz[2]<matching_thres ){//&& xyz[2]<30.0f
                 if (Ipos[0]<vSim3->_width && Ipos[0]>=0 && Ipos[1]<vSim3->_height && Ipos[1]>=0 && depth_info[i_idx]>5.0)
                 {
                     // SET PointXYZ VERTEX
