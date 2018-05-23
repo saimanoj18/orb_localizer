@@ -466,7 +466,7 @@ bool LoopClosing::ComputeSE3()
     mpCurrentKF->mCurPose = correctedTcw;
     mpCurrentKF->mCurCov = mInformation; 
 
-    if(matching_err<500 ){//
+    if(matching_err<200 ){//
         return true;
     }
     return false;
