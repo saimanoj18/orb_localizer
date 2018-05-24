@@ -137,13 +137,13 @@ bool LoopClosing::DetectLocalize()
         mpCurrentKF->SetNotErase();
     }
 
-//    //If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
-//    if(mpCurrentKF->mnId<mLastLoopKFid+10)
-//    {
-//        mpKeyFrameDB->add(mpCurrentKF);
-//        mpCurrentKF->SetErase();
-//        return false;
-//    }
+    //If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
+    if(mpCurrentKF->mnId<mLastLoopKFid+2)
+    {
+        mpKeyFrameDB->add(mpCurrentKF);
+        mpCurrentKF->SetErase();
+        return false;
+    }
 
     return true;
 
@@ -295,7 +295,7 @@ bool LoopClosing::ComputeSE3()
     float* depth_gradientY = new float[width*height]();
     float* depth_info = new float[width*height]();
 
-    double d_var = 0.01;
+    double d_var = 0.00;
     double d_limit = 100.0;
     double matching_thres = basefx*( 1.0/(d_limit/16.0) + d_var/((float)(d_limit/16.0)*(d_limit/16.0)*(d_limit/16.0)) );
 
@@ -387,6 +387,8 @@ bool LoopClosing::ComputeSE3()
     info << 0.0f;
 
     int index = 1;
+    vector<g2o::EdgeXYZDepth*> vpEdges;
+    vpEdges.reserve(numpts);
     for(size_t i=0; i<numpts;i++)
     {
         // Set map points
@@ -421,6 +423,7 @@ bool LoopClosing::ComputeSE3()
                     e01->setRobustKernel(rk1);
 
                     optimizer.addEdge(e01);
+                    vpEdges.push_back(e01);
 
                     index++;
                 }
@@ -434,6 +437,18 @@ bool LoopClosing::ComputeSE3()
 
     int g2oresult = optimizer.optimize(100);
     cout<<g2oresult<<endl;
+
+    // Check inliers
+    index=0;
+    for(size_t i=0; i<vpEdges.size();i++)
+    {
+        g2o::EdgeXYZDepth* e12 = vpEdges[i];
+        if(e12->chi2()<10)
+        {
+            index++;
+        }
+    }
+    cout<<index<<endl;
 
     // Recover optimized Sim3
     g2o::VertexSim3Expmap* vSim3_recov = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(0));
@@ -453,6 +468,7 @@ bool LoopClosing::ComputeSE3()
  
 
     double matching_err = optimizer.activeRobustChi2()/(double) index;
+//    double matching_err = optimizer.activeRobustChi2()/100000.0;
     cout<<"activeRobustChi2() "<<matching_err<<endl;
 
     mInformation = 0.000000001*mInformation/matching_err;
@@ -469,7 +485,7 @@ bool LoopClosing::ComputeSE3()
     mpCurrentKF->mCurPose = correctedTcw;
     mpCurrentKF->mCurCov = mInformation; 
 
-    if(matching_err<500 ){//
+    if(matching_err<1000 ){//
         return true;
     }
     return false;

@@ -56,11 +56,12 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     float cx = fSettings["Camera.cx"];
     float cy = fSettings["Camera.cy"];
 
-    float scale = 1.0;
-    fx = fx*scale;
-    fy = fy*scale;
-    cx = cx*scale;
-    cy = cy*scale;
+    float scale1 = fSettings["Camera.scale1"];
+    float scale2 = fSettings["Camera.scale2"];
+    fx = fx*scale1;
+    fy = fy*scale2;
+    cx = cx*scale1;
+    cy = cy*scale2;
 
     cv::Mat K = cv::Mat::eye(3,3,CV_32F);
     K.at<float>(0,0) = fx;
@@ -83,7 +84,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     DistCoef.copyTo(mDistCoef);
 
     mbf = fSettings["Camera.bf"];
-    mbf = mbf*scale;
+    mbf = mbf*scale1;
 
     float fps = fSettings["Camera.fps"];
     if(fps==0)
@@ -1643,11 +1644,12 @@ void Tracking::ChangeCalibration(const string &strSettingPath)
     float cx = fSettings["Camera.cx"];
     float cy = fSettings["Camera.cy"];
 
-    float scale = 1.0;
-    fx = fx*scale;
-    fy = fy*scale;
-    cx = cx*scale;
-    cy = cy*scale;
+    float scale1 = fSettings["Camera.scale1"];
+    float scale2 = fSettings["Camera.scale2"];
+    fx = fx*scale1;
+    fy = fy*scale2;
+    cx = cx*scale1;
+    cy = cy*scale2;
 
     cv::Mat K = cv::Mat::eye(3,3,CV_32F);
     K.at<float>(0,0) = fx;
@@ -1670,7 +1672,7 @@ void Tracking::ChangeCalibration(const string &strSettingPath)
     DistCoef.copyTo(mDistCoef);
 
     mbf = fSettings["Camera.bf"];
-    mbf = mbf*scale;
+    mbf = mbf*scale1;
 
     Frame::mbInitialComputations = true;
 }

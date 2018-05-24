@@ -16,8 +16,8 @@ using namespace std;
 void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
                 vector<string> &vstrImageRight, vector<double> &vTimestamps);
 
-void LoadVelodyne(const string &strPathToSequence, const string &strSettingPath, vector<cv::Mat> &vGTPoses,  pcl::PointCloud<pcl::PointXYZ>::Ptr &GTVelodyne);
-void SegmentVelodyne(cv::Mat &vGTPose,  pcl::octree::OctreePointCloudSearch<pcl::PointXYZ> oc, pcl::PointCloud<pcl::PointXYZ>::Ptr &GTVelodyne, pcl::PointCloud<pcl::PointXYZ> &curVelodyne);
+void LoadVelodyne(const string &strPathToSequence, const string &strSettingPath, vector<cv::Mat> &vGTPoses,  pcl::PointCloud<pcl::PointXYZ>::Ptr &GTVelodyne, cv::Mat camIntrinsic);
+void SegmentVelodyne(cv::Mat &vGTPose,  pcl::octree::OctreePointCloudSearch<pcl::PointXYZ> oc, pcl::PointCloud<pcl::PointXYZ>::Ptr &GTVelodyne, pcl::PointCloud<pcl::PointXYZ> &curVelodyne, int image_width, int image_height, cv::Mat camIntrinsic);
 
 int main(int argc, char **argv)
 {
@@ -32,12 +32,16 @@ int main(int argc, char **argv)
     vector<string> vstrImageRight;
     vector<double> vTimestamps;
     vector<cv::Mat> vGTPoses;
-//    pcl::PointCloud<pcl::PointXYZ> vgtVelodyne;
+    cv::Mat K = cv::Mat::eye(3, 3, CV_32F);
     pcl::PointCloud<pcl::PointXYZ>::Ptr vgtVelodyne (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::octree::OctreePointCloudSearch<pcl::PointXYZ> octree (128.0f);
 
     LoadImages(string(argv[3]), vstrImageLeft, vstrImageRight, vTimestamps);
-    LoadVelodyne(string(argv[3]), string(argv[2]),vGTPoses, vgtVelodyne);
+    LoadVelodyne(string(argv[3]), string(argv[2]),vGTPoses, vgtVelodyne, K);
+    //set scale
+    cv::FileStorage fSettings(string(argv[2]), cv::FileStorage::READ);
+    float scale1 = fSettings["Camera.scale1"];
+    float scale2 = fSettings["Camera.scale2"];
     //set octree
     octree.setInputCloud (vgtVelodyne);
     octree.addPointsFromInputCloud ();
@@ -63,12 +67,11 @@ int main(int argc, char **argv)
         // Read left and right images from file
         imLeft = cv::imread(vstrImageLeft[ni],CV_LOAD_IMAGE_UNCHANGED);
         imRight = cv::imread(vstrImageRight[ni],CV_LOAD_IMAGE_UNCHANGED);
-//        cv::resize(imLeft, imLeft, cv::Size(), 0.5, 0.5);
-//        cv::resize(imRight, imRight, cv::Size(), 0.5, 0.5);
-        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
-        clahe->setClipLimit(5);
-        clahe->apply(imLeft,imLeft);
-        clahe->apply(imRight,imRight);
+
+//        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+//        clahe->setClipLimit(5);
+//        clahe->apply(imLeft,imLeft);
+//        clahe->apply(imRight,imRight);
 
 
         
@@ -77,7 +80,9 @@ int main(int argc, char **argv)
         double tframe = vTimestamps[ni];
         
         pcl::PointCloud<pcl::PointXYZ> gtVelodyne;
-        SegmentVelodyne(gtPose, octree, vgtVelodyne, gtVelodyne);
+        SegmentVelodyne(gtPose, octree, vgtVelodyne, gtVelodyne, imLeft.cols, imLeft.rows, K);
+        cv::resize(imLeft, imLeft, cv::Size(), scale1, scale2);
+        cv::resize(imRight, imRight, cv::Size(), scale1, scale2);
 
         if(imLeft.empty())
         {
@@ -136,6 +141,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
+
 void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
                 vector<string> &vstrImageRight, vector<double> &vTimestamps)
 {
@@ -175,7 +181,7 @@ void LoadImages(const string &strPathToSequence, vector<string> &vstrImageLeft,
     }
 }
 
-void LoadVelodyne(const string &strPathToSequence, const string &strSettingPath, vector<cv::Mat> &vGTPoses, pcl::PointCloud<pcl::PointXYZ>::Ptr &GTVelodyne)
+void LoadVelodyne(const string &strPathToSequence, const string &strSettingPath, vector<cv::Mat> &vGTPoses, pcl::PointCloud<pcl::PointXYZ>::Ptr &GTVelodyne, cv::Mat camIntrinsic)
 {
     //Load Tcv
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
@@ -196,6 +202,11 @@ void LoadVelodyne(const string &strPathToSequence, const string &strSettingPath,
     Tcv.at<float>(3,1) = 0.0;
     Tcv.at<float>(3,2) = 0.0;
     Tcv.at<float>(3,3) = 1.0;
+
+    camIntrinsic.at<float>(0,0) = fSettings["Camera.fx"];
+    camIntrinsic.at<float>(0,2) = fSettings["Camera.cx"];
+    camIntrinsic.at<float>(1,1) = fSettings["Camera.fy"];
+    camIntrinsic.at<float>(1,2) = fSettings["Camera.cy"];
 
     //Load gt poses
     ifstream fGTPoses;
@@ -272,7 +283,7 @@ void LoadVelodyne(const string &strPathToSequence, const string &strSettingPath,
 
 }
 
-void SegmentVelodyne(cv::Mat &vGTPose,  pcl::octree::OctreePointCloudSearch<pcl::PointXYZ> oc, pcl::PointCloud<pcl::PointXYZ>::Ptr &GTVelodyne, pcl::PointCloud<pcl::PointXYZ> &curVelodyne)
+void SegmentVelodyne(cv::Mat &vGTPose,  pcl::octree::OctreePointCloudSearch<pcl::PointXYZ> oc, pcl::PointCloud<pcl::PointXYZ>::Ptr &GTVelodyne, pcl::PointCloud<pcl::PointXYZ> &curVelodyne, int image_width, int image_height, cv::Mat camIntrinsic)
 {
     //extract local map
     pcl::PointXYZ searchPoint;
@@ -281,20 +292,81 @@ void SegmentVelodyne(cv::Mat &vGTPose,  pcl::octree::OctreePointCloudSearch<pcl:
     searchPoint.z = vGTPose.at<float>(2,3);
     std::vector<int> pointIdxRadiusSearch;
     std::vector<float> pointRadiusSquaredDistance;
-    oc.radiusSearch (searchPoint, 50.0f, pointIdxRadiusSearch, pointRadiusSquaredDistance);
+    oc.radiusSearch (searchPoint, 20.0f, pointIdxRadiusSearch, pointRadiusSquaredDistance);
 
+    //pt cloud
     curVelodyne.clear();
     curVelodyne.width = pointIdxRadiusSearch.size()/10+1;
     curVelodyne.height = 1;
     curVelodyne.points.resize (curVelodyne.width * curVelodyne.height);
+
+//    //range image
+//    cv::Mat K = 0.5*camIntrinsic;
+//    K.at<float>(0,0) = K.at<float>(0,0)*0.5;
+////    K.at<float>(1,1) = K.at<float>(0,0)*2.0;
+//    int width = image_width*0.5;
+//    int height = image_height*0.5;
+//    cv::Mat range_image = cv::Mat::zeros(cv::Size(width, height), CV_32FC1);
+
+
     int count = 0;
+    int index = 0;
     for (size_t i = 0; i < pointIdxRadiusSearch.size (); ++i)
     {
         if(i%10==0){
         curVelodyne.points[count].x = GTVelodyne->points[ pointIdxRadiusSearch[i] ].x;
         curVelodyne.points[count].y = GTVelodyne->points[ pointIdxRadiusSearch[i] ].y;
         curVelodyne.points[count].z = GTVelodyne->points[ pointIdxRadiusSearch[i] ].z;
+        
+//        cv::Mat ptsxyz = cv::Mat::eye(4, 4, CV_32F);
+//        ptsxyz.at<float>(0,3) = curVelodyne.points[count].x;
+//        ptsxyz.at<float>(1,3) = curVelodyne.points[count].y;
+//        ptsxyz.at<float>(2,3) = curVelodyne.points[count].z;        
+//        //transform to current camera coordinate
+//        cv::Mat transformed_xyz = vGTPose.inv()*ptsxyz;
+//        //project to image
+//        int u = (int) K.at<float>(0,0)*transformed_xyz.at<float>(0,3)/transformed_xyz.at<float>(2,3) + K.at<float>(0,2);
+//        int v = (int) K.at<float>(1,1)*transformed_xyz.at<float>(1,3)/transformed_xyz.at<float>(2,3) + K.at<float>(1,2);
+//        float d = transformed_xyz.at<float>(2,3);
+//        
+//        if(u>=0 && u<width && v>=0 && v<height && d>0)
+//        {
+//            if(range_image.at<float>(v,u)>0){
+//                if(d<range_image.at<float>(v,u))range_image.at<float>(v,u) = d;
+//            }
+//            else{
+//                range_image.at<float>(v,u) = d;
+//                index++;
+//            }
+//        }
         count++;
         }
     }
+
+//    //Extract point clouds from the range image
+//    curVelodyne.clear();
+//    curVelodyne.width = index;
+//    curVelodyne.height = 1;
+//    curVelodyne.points.resize (curVelodyne.width * curVelodyne.height);
+//    count = 0;
+//    for (int i = 0; i < width*height; ++i)
+//    {
+//        int u = i%width;
+//        int v = i/width;
+//        float d = range_image.at<float>(v,u);
+//        if(d>0)
+//        {
+//            curVelodyne.points[count].x = d/K.at<float>(0,0)*(u-K.at<float>(0,2));
+//            curVelodyne.points[count].y = d/K.at<float>(1,1)*(v-K.at<float>(1,2)); 
+//            curVelodyne.points[count].z = d; 
+//            count++;
+//        }        
+//    }
+
+//    Eigen::Matrix4f eigenPose;
+//    eigenPose<<vGTPose.at<float>(0,0),vGTPose.at<float>(0,1),vGTPose.at<float>(0,2),vGTPose.at<float>(0,3),
+//               vGTPose.at<float>(1,0),vGTPose.at<float>(1,1),vGTPose.at<float>(1,2),vGTPose.at<float>(1,3),
+//               vGTPose.at<float>(2,0),vGTPose.at<float>(2,1),vGTPose.at<float>(2,2),vGTPose.at<float>(2,3),
+//               vGTPose.at<float>(3,0),vGTPose.at<float>(3,1),vGTPose.at<float>(3,2),vGTPose.at<float>(3,3);
+//    pcl::transformPointCloud (curVelodyne, curVelodyne, eigenPose);
 }
