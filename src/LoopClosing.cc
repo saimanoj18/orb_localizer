@@ -471,7 +471,7 @@ bool LoopClosing::ComputeSE3()
 //    double matching_err = optimizer.activeRobustChi2()/100000.0;
     cout<<"activeRobustChi2() "<<matching_err<<endl;
 
-    mInformation = 0.000000001*mInformation/matching_err;
+    mInformation = 0.000000001*mInformation;///matching_err;
     cout << mInformation <<endl;
 
     // add partial pose
@@ -485,7 +485,7 @@ bool LoopClosing::ComputeSE3()
     mpCurrentKF->mCurPose = correctedTcw;
     mpCurrentKF->mCurCov = mInformation; 
 
-    if(matching_err<1000 ){//
+    if(matching_err<500 ){//
         return true;
     }
     return false;

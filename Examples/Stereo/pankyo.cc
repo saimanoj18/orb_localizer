@@ -249,7 +249,7 @@ void LoadVelodyne(const string &strPathToSequence, const string &strSettingPath,
 
     //Load global map from .las
     ifstream fGTVelodyne;
-    string strPathGTPointFile = strPathToSequence +"/sick_pointcloud.las";
+    string strPathGTPointFile = strPathToSequence +"/sick_pointcloud2.las";
     
     if (!liblas::Open(fGTVelodyne, strPathGTPointFile))
     {
@@ -292,7 +292,7 @@ void SegmentVelodyne(cv::Mat &vGTPose,  pcl::octree::OctreePointCloudSearch<pcl:
     searchPoint.z = vGTPose.at<float>(2,3);
     std::vector<int> pointIdxRadiusSearch;
     std::vector<float> pointRadiusSquaredDistance;
-    oc.radiusSearch (searchPoint, 20.0f, pointIdxRadiusSearch, pointRadiusSquaredDistance);
+    oc.radiusSearch (searchPoint, 25.0f, pointIdxRadiusSearch, pointRadiusSquaredDistance);
 
     //pt cloud
     curVelodyne.clear();
