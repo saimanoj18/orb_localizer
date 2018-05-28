@@ -331,7 +331,7 @@ bool LoopClosing::ComputeSE3()
         //depth info
         float info_denom = sqrt(depth_gradientX[i]*depth_gradientX[i]+depth_gradientY[i]*depth_gradientY[i]);
         if (!isfinite(info_denom)) depth_info[i] = 0;
-        else if (info_denom<0.01) depth_info[i] = 0;
+        else if (info_denom<0.0001) depth_info[i] = 0;
         else depth_info[i] = 10.0/info_denom;
 
 //        if(depth_info[i]<5.0) depth_info[i] = 0.0;
@@ -439,16 +439,25 @@ bool LoopClosing::ComputeSE3()
     cout<<g2oresult<<endl;
 
     // Check inliers
-    index=0;
+    double index2=0;
+    double sum_chi2 = 0;
     for(size_t i=0; i<vpEdges.size();i++)
     {
         g2o::EdgeXYZDepth* e12 = vpEdges[i];
         if(e12->chi2()<10)
         {
-            index++;
+            index2++;
+            sum_chi2 = sum_chi2 + e12->chi2();
         }
+//        else
+//        {
+//            optimizer.removeEdge(e12);
+//        }
     }
-    cout<<index<<endl;
+    cout<<index2<<endl;
+
+//    optimizer.initializeOptimization();
+//    optimizer.optimize(100);
 
     // Recover optimized Sim3
     g2o::VertexSim3Expmap* vSim3_recov = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(0));
@@ -468,7 +477,7 @@ bool LoopClosing::ComputeSE3()
  
 
     double matching_err = optimizer.activeRobustChi2()/(double) index;
-//    double matching_err = optimizer.activeRobustChi2()/100000.0;
+//    double matching_err = sum_chi2/(double) index2;
     cout<<"activeRobustChi2() "<<matching_err<<endl;
 
     mInformation = 0.000000001*mInformation;///matching_err;
@@ -478,70 +487,17 @@ bool LoopClosing::ComputeSE3()
     Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
     Eigen::Vector3d eigt = mg2oScw.translation();
     double s = mg2oScw.scale();
-    cout<<"scale: "<<s<<endl;
     eigt *=(1./s); //[R t/s;0 1]
     cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
     mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
     mpCurrentKF->mCurPose = correctedTcw;
     mpCurrentKF->mCurCov = mInformation; 
 
-    if(matching_err<500 ){//
+    if(matching_err<200 ){//(index*0.3<index2){//
         return true;
     }
     return false;
 
-//    else{
-
-//        //Relocalization by ICP between local map and 3d prior map
-//        //create matching clouds
-//        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
-//        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ> (mpCurrentKF->mGtVelodyne));
-//        vector<MapPoint*> vpMPsi = mpCurrentKF->GetMapPointMatches();
-//        for(size_t iMP=0, endMPi = vpMPsi.size(); iMP<endMPi; iMP++)
-//        {
-//            MapPoint* pMPi = vpMPsi[iMP];
-//            if(!pMPi)
-//                continue;
-//            if(pMPi->isBad())
-//                continue;
-//            if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
-//                continue;
-
-//            // Project with non-corrected pose and project back with corrected pose
-//            cv::Mat P3Dw = pMPi->GetWorldPos();
-//            Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
-//            pcl::PointXYZ pts;
-//            pts.x = eigP3Dw[0];
-//            pts.y = eigP3Dw[1];
-//            pts.z = eigP3Dw[2];
-//            cloud_in->push_back(pts);
-//        }
-//        cout<<"local map points: "<<vpMPsi.size()<<endl;
-//        if(vpMPsi.size()>1000)
-//        {
-//            pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-//            icp.setInputCloud(cloud_in);
-//            icp.setInputTarget(cloud_out);
-//            pcl::PointCloud<pcl::PointXYZ> Final;
-//            icp.align(Final);
-
-
-//            cout<<icp.getFitnessScore()<<endl;
-//            cout<<icp.getFinalTransformation()<<endl;
-//            
-//            Eigen::Matrix4f icp_result = icp.getFinalTransformation();
-//            Eigen::Matrix3d eigR = icp_result.block<3,3>(0,0).matrix().cast <double> ();
-//            Eigen::Vector3d eigt = icp_result.block<3,1>(0,3).matrix().cast <double> ();
-//            cv::Mat Tww = Converter::toCvSE3(eigR,eigt);
-//            cv::Mat new_T = mpCurrentKF->GetPose()*Tww.inv();
-//            cv::Mat new_R = new_T.rowRange(0,3).colRange(0,3);
-//            cv::Mat new_t = new_T.rowRange(0,3).col(3);
-//            g2o::Sim3 g2oSww(Converter::toMatrix3d(new_R),Converter::toVector3d(new_t),1.0);
-//            if(icp.hasConverged() && icp.getFitnessScore()<150.0)mg2oScw = g2oSww;
-////            else if(index<1000 && icp.hasConverged())mg2oScw = g2oSww;
-//        }
-//        return true;
-//    }
 
 
 
