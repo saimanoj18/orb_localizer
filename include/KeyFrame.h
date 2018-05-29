@@ -178,6 +178,7 @@ public:
     const cv::Mat mDescriptors;
 
     //YJ
+    cv::Mat mGtPose; 
     pcl::PointCloud<pcl::PointXYZ> mGtVelodyne;
     cv::Mat mDispImg;
     std::vector<std::pair<cv::Mat, cv::Mat>>mPartialPose;

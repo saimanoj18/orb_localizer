@@ -41,6 +41,9 @@
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
 #include "types_depth.h"
 
+#include <gflags/gflags.h>
+#include "Thirdparty/robust_pcl_registration/robust_pcl_registration/pda.h"
+
 
 namespace ORB_SLAM2
 {
@@ -110,6 +113,8 @@ protected:
 
     void Localize(bool confident);//YJ
 
+    void ReLocalize();//YJ
+
     void CorrectLoop();
 
     cv::Mat mInformation;//YJ
@@ -165,8 +170,8 @@ protected:
     // Fix scale in the stereo/RGB-D case
     bool mbFixScale;
 
-
     bool mnFullBAIdx;
+
 
 };
 
