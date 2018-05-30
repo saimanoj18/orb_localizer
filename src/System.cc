@@ -154,6 +154,8 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
     }
     }
     
+
+
     cv::Mat Tcw = mpTracker->GrabImageStereo(imLeft,imRight,timestamp,gtPose,gtVelodyne);
 
     unique_lock<mutex> lock2(mMutexState);

@@ -99,6 +99,10 @@ target_link_libraries(rgbd_tum ${PROJECT_NAME})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
 
+add_executable(testicp
+Examples/Stereo/testicp.cc)
+target_link_libraries(testicp ${PROJECT_NAME})
+
 add_executable(pankyo
 Examples/Stereo/pankyo.cc)
 target_link_libraries(pankyo ${PROJECT_NAME})

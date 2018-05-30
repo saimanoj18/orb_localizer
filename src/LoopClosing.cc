@@ -523,57 +523,64 @@ void LoopClosing::ReLocalize()
     ipda_params.solver_use_nonmonotonic_steps = true;
     ipda_params.use_gaussian = true;
     ipda_params.visualize_clouds = true;
-    ipda_params.dof = 3.0;
+    ipda_params.dof = 100.0;
     ipda_params.point_size_aligned_source = 3.0;
     ipda_params.point_size_source = 3.0;
     ipda_params.point_size_target = 3.0;
-    ipda_params.radius = 10.0;
+    ipda_params.radius = 0.5;
     ipda_params.solver_function_tolerance = 1.0e-16;
     ipda_params.source_filter_size = 5.0;
     ipda_params.target_filter_size = 0.0;
     ipda_params.transformation_epsilon = 1.0e-3;
     ipda_params.dimension = 3;
     ipda_params.maximum_iterations = 100;
-    ipda_params.max_neighbours = 1000;
+    ipda_params.max_neighbours = 20;
     ipda_params.solver_maximum_iterations = 100;
-    ipda_params.solver_num_threads = 1;
-    ipda_params.aligned_cloud_filename = "";
-    ipda_params.frame_id = "";
-    ipda_params.source_cloud_filename = "";
-    ipda_params.target_cloud_filename = "";
+    ipda_params.solver_num_threads = 8;
+    ipda_params.aligned_cloud_filename = "aligned.pcd";
+    ipda_params.frame_id = "map";
+    ipda_params.source_cloud_filename = "source.pcd";
+    ipda_params.target_cloud_filename = "target.pcd";
 
     Ipda ipda(ipda_params);
 
-    // Create in and out clouds
-//    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in =
-//      boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-//    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out =
-//      boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(mpCurrentKF->mGtVelodyne);
-//    cloud_out = mpCurrentKF->mGtVelodyne;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ> (mpCurrentKF->mGtVelodyne));
-    vector<MapPoint*> vpMPsi = mpCurrentKF->GetMapPointMatches();
-    for(size_t iMP=0, endMPi = vpMPsi.size(); iMP<endMPi; iMP++)
-    {
-        MapPoint* pMPi = vpMPsi[iMP];
-        if(!pMPi)
-            continue;
-        if(pMPi->isBad())
-            continue;
-        if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
-            continue;
+//    // Create in and out clouds
+////    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in =
+////      boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+////    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out =
+////      boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(mpCurrentKF->mGtVelodyne);
+////    cloud_out = mpCurrentKF->mGtVelodyne;
+//    
+//    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
+//    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ> (mpCurrentKF->mGtVelodyne));
+//    vector<MapPoint*> vpMPsi = mpCurrentKF->GetMapPointMatches();
+//    for(size_t iMP=0, endMPi = vpMPsi.size(); iMP<endMPi; iMP++)
+//    {
+//        MapPoint* pMPi = vpMPsi[iMP];
+//        if(!pMPi)
+//            continue;
+//        if(pMPi->isBad())
+//            continue;
+//        if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
+//            continue;
 
-        // Project with non-corrected pose and project back with corrected pose
-        cv::Mat P3Dw = pMPi->GetWorldPos();
-        Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
-        pcl::PointXYZ pts;
-        pts.x = eigP3Dw[0];
-        pts.y = eigP3Dw[1];
-        pts.z = eigP3Dw[2];
-        cloud_in->push_back(pts);
-    }
-    cout<<cloud_in->points.size()<<endl;
-    cout<<cloud_out->points.size()<<endl;
+//        // Project with non-corrected pose and project back with corrected pose
+//        cv::Mat P3Dw = pMPi->GetWorldPos();
+//        Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
+//        pcl::PointXYZ pts;
+//        pts.x = eigP3Dw[0];
+//        pts.y = eigP3Dw[1];
+//        pts.z = eigP3Dw[2];
+//        cloud_in->push_back(pts);
+//    }
+//    cout<<cloud_in->points.size()<<endl;
+//    cout<<cloud_out->points.size()<<endl;
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::io::loadPCDFile<pcl::PointXYZ>(ipda_params.source_cloud_filename, *cloud_in);
+    pcl::io::loadPCDFile<pcl::PointXYZ>(ipda_params.target_cloud_filename, *cloud_out);
+
     ipda.evaluate(cloud_in, cloud_out);    
     //save relocalization pose
     

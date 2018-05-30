@@ -41,9 +41,8 @@
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
 #include "types_depth.h"
 
-#include <gflags/gflags.h>
+//#include <gflags/gflags.h>
 #include "Thirdparty/robust_pcl_registration/robust_pcl_registration/pda.h"
-
 
 namespace ORB_SLAM2
 {

@@ -36,7 +36,7 @@ void PointCloudRegistration::solve(ceres::Solver::Options options,
                                    ceres::Solver::Summary* summary) {
   options.callbacks.push_back(weight_updater_callback_.get());
   options.update_state_every_iteration = true;
-  ceres::Solve(options, problem_.get(), summary);
+  ceres::Solve(options, problem_.get(), summary);  
 }
 
 Eigen::Affine3d PointCloudRegistration::transformation() {

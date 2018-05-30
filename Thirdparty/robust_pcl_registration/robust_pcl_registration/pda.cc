@@ -91,11 +91,11 @@ void Ipda::evaluate(
     point_cloud_registration::PointCloudRegistration registration(
           *aligned_source, *target_cloud, data_association, params);
     registration.solve(options, &summary);
-    VLOG(100) << summary.FullReport();
+//    VLOG(100) << summary.FullReport();
 
     const Eigen::Affine3d current_transformation = registration.transformation();
     final_transformation = current_transformation * final_transformation;
-    LOG(INFO) << "Current Transformation: " << std::endl << final_transformation.matrix();
+//    LOG(INFO) << "Current Transformation: " << std::endl << final_transformation.matrix();
     pcl::transformPointCloud(*aligned_source, *aligned_source, current_transformation);
 
     if (params_.visualize_clouds) {
@@ -118,9 +118,9 @@ void Ipda::evaluate(
     const double transformation_epsilon =
         ((current_transformation * previous_transformation.inverse()).matrix()
          - Eigen::Matrix4d::Identity()).norm();
-    LOG(INFO) << "Transformation epsilon: " << transformation_epsilon;
+//    LOG(INFO) << "Transformation epsilon: " << transformation_epsilon;
     if (transformation_epsilon < params_.transformation_epsilon) {
-      LOG(INFO) << "IPDA converged." << std::endl;
+//      LOG(INFO) << "IPDA converged." << std::endl;
       return;
     }
     previous_transformation = current_transformation;
