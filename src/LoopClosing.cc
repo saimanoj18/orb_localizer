@@ -536,7 +536,7 @@ void LoopClosing::ReLocalize()
     ipda_params.maximum_iterations = 100;
     ipda_params.max_neighbours = 20;
     ipda_params.solver_maximum_iterations = 100;
-    ipda_params.solver_num_threads = 8;
+    ipda_params.solver_num_threads = 1;
     ipda_params.aligned_cloud_filename = "aligned.pcd";
     ipda_params.frame_id = "map";
     ipda_params.source_cloud_filename = "source.pcd";

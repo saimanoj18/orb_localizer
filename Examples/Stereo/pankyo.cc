@@ -21,7 +21,6 @@ void SegmentVelodyne(cv::Mat &vGTPose,  pcl::octree::OctreePointCloudSearch<pcl:
 
 int main(int argc, char **argv)
 {
-
     if(argc != 4)
     {
         cerr << endl << "Usage: ./stereo_kitti path_to_vocabulary path_to_settings path_to_sequence" << endl;
