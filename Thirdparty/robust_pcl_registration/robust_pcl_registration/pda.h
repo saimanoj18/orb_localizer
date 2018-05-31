@@ -40,9 +40,10 @@ struct IpdaParameters {
 class Ipda {
  public:
   Ipda(const IpdaParameters& params);
-  void evaluate(
+  bool evaluate(
       pcl::PointCloud<PointType>::Ptr source_cloud,
-      pcl::PointCloud<PointType>::Ptr target_cloud);
+      pcl::PointCloud<PointType>::Ptr target_cloud,
+      Eigen::Affine3d& final_transformation);
  private:
   IpdaParameters params_;
   std::shared_ptr<pcl::visualization::PCLVisualizer> viewer_;

@@ -43,6 +43,7 @@
 
 //#include <gflags/gflags.h>
 #include "Thirdparty/robust_pcl_registration/robust_pcl_registration/pda.h"
+#include "Thirdparty/robust_pcl_registration/robust_pcl_registration/gicp.h"
 
 namespace ORB_SLAM2
 {
@@ -112,7 +113,7 @@ protected:
 
     void Localize(bool confident);//YJ
 
-    void ReLocalize();//YJ
+    bool ReLocalize();//YJ
 
     void CorrectLoop();
 

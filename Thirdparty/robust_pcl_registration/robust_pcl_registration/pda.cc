@@ -16,13 +16,16 @@
 Ipda::Ipda(const IpdaParameters& params)
   : params_(params) {}
 
-void Ipda::evaluate(
+bool Ipda::evaluate(
     pcl::PointCloud<PointType>::Ptr source_cloud,
-    pcl::PointCloud<PointType>::Ptr target_cloud) {
+    pcl::PointCloud<PointType>::Ptr target_cloud,
+    Eigen::Affine3d& final_transformation) {
   CHECK(source_cloud);
   CHECK(target_cloud);
+  double transformation_epsilon = 0;
 
-  Eigen::Affine3d final_transformation, previous_transformation, I_3;
+//  Eigen::Affine3d final_transformation, previous_transformation, I_3;
+  Eigen::Affine3d previous_transformation, I_3;
   final_transformation.setIdentity();
   previous_transformation.setIdentity();
   I_3.setIdentity();
@@ -115,14 +118,17 @@ void Ipda::evaluate(
     }
 
     // Check convergence.
-    const double transformation_epsilon =
+    transformation_epsilon =
         ((current_transformation * previous_transformation.inverse()).matrix()
          - Eigen::Matrix4d::Identity()).norm();
 //    LOG(INFO) << "Transformation epsilon: " << transformation_epsilon;
     if (transformation_epsilon < params_.transformation_epsilon) {
 //      LOG(INFO) << "IPDA converged." << std::endl;
-      return;
+      return true;//final_transformation;
     }
     previous_transformation = current_transformation;
   }
+  return false;
+//  if(transformation_epsilon<params_.transformation_epsilon*10.0)return true;
+//  else return false;
 }

@@ -95,8 +95,10 @@ void LoopClosing::Run()
                     Localize(true);
                 }
                 else{
-                    ReLocalize();
-                    needRelocalize = true;  
+                    if(ReLocalize()){
+                        Localize(true);
+                    }
+//                    needRelocalize = true;  
                 }
             }
         }    
@@ -130,14 +132,14 @@ bool LoopClosing::DetectLocalize()
 
     {
         unique_lock<mutex> lock(mMutexLoopQueue);
-        mpCurrentKF = mlpLoopKeyFrameQueue.front();
-        mlpLoopKeyFrameQueue.pop_front();
+        mpCurrentKF = mlpLoopKeyFrameQueue.back();
+        mlpLoopKeyFrameQueue.pop_back();
         // Avoid that a keyframe can be erased while it is being process by this thread
         mpCurrentKF->SetNotErase();
     }
 
     //If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
-    if(mpCurrentKF->mnId<mLastLoopKFid+2)
+    if(mpCurrentKF->mnId<mLastLoopKFid+3)
     {
         mpKeyFrameDB->add(mpCurrentKF);
         mpCurrentKF->SetErase();
@@ -399,7 +401,7 @@ bool LoopClosing::ComputeSE3()
         int i_idx = ((int)Ipos[1])*vSim3->_width+((int)Ipos[0]);
         
         
-        if ( xyz[2]>0.0f && isfinite(xyz[2]) && xyz[2]<matching_thres ){//&& xyz[2]<30.0f
+        if ( xyz[2]>0.0f && isfinite(xyz[2]) && xyz[2]<matching_thres && xyz[2]<30.0f ){//
                 if (Ipos[0]<vSim3->_width && Ipos[0]>=0 && Ipos[1]<vSim3->_height && Ipos[1]>=0 && depth_info[i_idx]>5.0)
                 {
                     // SET PointXYZ VERTEX
@@ -489,20 +491,11 @@ bool LoopClosing::ComputeSE3()
     eigt *=(1./s); //[R t/s;0 1]
     cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
     cout<<correctedTcw<<endl;
-
-//    eigR = Converter::toMatrix3d(mpCurrentKF->mGtPose.rowRange(0,3).colRange(0,3)).inverse();
-////    eigt = Converter::toVector3d(mpCurrentKF->mGtPose.rowRange(0,3).col(3));
-//    cv::Mat correctedTcw2 = Converter::toCvSE3(eigR,eigt);
-//    cout<<correctedTcw2<<endl;    
-//    correctedTcw = correctedTcw2;
-//    g2o::Sim3 g2oS(eigR,eigt,1.0);
-//    mg2oScw = g2oS;
-
     mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
     mpCurrentKF->mCurPose = correctedTcw;
     mpCurrentKF->mCurCov = mInformation; 
 
-    if(matching_err<20 ){//(index*0.3<index2){//
+    if(matching_err<200 ){//(index*0.3<index2){//
         return true;
     }
     return false;
@@ -512,80 +505,276 @@ bool LoopClosing::ComputeSE3()
 
 }
 
-void LoopClosing::ReLocalize()
+bool LoopClosing::ReLocalize()
 {
     //ICP between local map and prior map
 
     // Load the IPDA parameters.
     IpdaParameters ipda_params;
-    ipda_params.save_aligned_cloud = true;
+    ipda_params.save_aligned_cloud = false;
     ipda_params.solver_minimizer_progress_to_stdout = false;
     ipda_params.solver_use_nonmonotonic_steps = true;
     ipda_params.use_gaussian = true;
-    ipda_params.visualize_clouds = true;
+    ipda_params.visualize_clouds = false;
     ipda_params.dof = 100.0;
     ipda_params.point_size_aligned_source = 3.0;
     ipda_params.point_size_source = 3.0;
     ipda_params.point_size_target = 3.0;
-    ipda_params.radius = 0.5;
+    ipda_params.radius = 0.1;
     ipda_params.solver_function_tolerance = 1.0e-16;
     ipda_params.source_filter_size = 5.0;
     ipda_params.target_filter_size = 0.0;
     ipda_params.transformation_epsilon = 1.0e-3;
     ipda_params.dimension = 3;
-    ipda_params.maximum_iterations = 100;
-    ipda_params.max_neighbours = 20;
-    ipda_params.solver_maximum_iterations = 100;
-    ipda_params.solver_num_threads = 1;
+    ipda_params.maximum_iterations = 10;
+    ipda_params.max_neighbours = 2;
+    ipda_params.solver_maximum_iterations = 10;
+    ipda_params.solver_num_threads = 8;
     ipda_params.aligned_cloud_filename = "aligned.pcd";
     ipda_params.frame_id = "map";
     ipda_params.source_cloud_filename = "source.pcd";
     ipda_params.target_cloud_filename = "target.pcd";
-
     Ipda ipda(ipda_params);
 
-//    // Create in and out clouds
-////    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in =
-////      boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-////    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out =
-////      boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(mpCurrentKF->mGtVelodyne);
-////    cloud_out = mpCurrentKF->mGtVelodyne;
-//    
-//    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
-//    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ> (mpCurrentKF->mGtVelodyne));
-//    vector<MapPoint*> vpMPsi = mpCurrentKF->GetMapPointMatches();
-//    for(size_t iMP=0, endMPi = vpMPsi.size(); iMP<endMPi; iMP++)
-//    {
-//        MapPoint* pMPi = vpMPsi[iMP];
-//        if(!pMPi)
-//            continue;
-//        if(pMPi->isBad())
-//            continue;
-//        if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
-//            continue;
+//    GicpParameters params;
+//    params.source_cloud_filename = "source.pcd";
+//    params.target_cloud_filename = "target.pcd";
+//    params.aligned_cloud_filename = "aligned.pcd";
+//    params.visualize_clouds = false;
+//    params.save_aligned_cloud = false;
+//    params.frame_id = "";
+//    params.transformation_epsilon = 0.01;
+//    params.maximum_iterations = 100;
+//    params.maximum_optimizer_iterations = 100;
+//    params.ransac_iterations = 100;
+//    params.ransac_outlier_rejection_threshold = 1.0;
+//    params.use_reciprocal_correspondence = false;
+//    params.use_default_parameters = true;
+    
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ> (mpCurrentKF->mGtVelodyne));
+    
+    vector<MapPoint*> vpMPsi = mpCurrentKF->GetMapPointMatches();
+    for(size_t iMP=0, endMPi = vpMPsi.size(); iMP<endMPi; iMP++)
+    {
+        MapPoint* pMPi = vpMPsi[iMP];
+        if(!pMPi)
+            continue;
+        if(pMPi->isBad())
+            continue;
+        if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
+            continue;
 
-//        // Project with non-corrected pose and project back with corrected pose
-//        cv::Mat P3Dw = pMPi->GetWorldPos();
-//        Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
-//        pcl::PointXYZ pts;
-//        pts.x = eigP3Dw[0];
-//        pts.y = eigP3Dw[1];
-//        pts.z = eigP3Dw[2];
-//        cloud_in->push_back(pts);
+        // Project with non-corrected pose and project back with corrected pose
+        cv::Mat P3Dw = pMPi->GetWorldPos();
+        Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
+        pcl::PointXYZ pts;
+        pts.x = eigP3Dw[0];
+        pts.y = eigP3Dw[1];
+        pts.z = eigP3Dw[2];
+        cloud_in->push_back(pts);
+    }
+    cout<<cloud_in->points.size()<<endl;
+    cout<<cloud_out->points.size()<<endl;
+
+//    mvpCurrentConnectedKFs = mpCurrentKF->GetVectorCovisibleKeyFrames();
+//    mvpCurrentConnectedKFs.push_back(mpCurrentKF);
+//    for(vector<KeyFrame*>::iterator vit=mvpCurrentConnectedKFs.begin(), vend=mvpCurrentConnectedKFs.end(); vit!=vend; vit++)
+//    {
+//        KeyFrame* pKFi = *vit;
+
+//        vector<MapPoint*> vpMPsi = pKFi->GetMapPointMatches();
+//        for(size_t iMP=0, endMPi = vpMPsi.size(); iMP<endMPi; iMP++)
+//        {
+//            MapPoint* pMPi = vpMPsi[iMP];
+//            if(!pMPi)
+//                continue;
+//            if(pMPi->isBad())
+//                continue;
+//            if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
+//                continue;
+
+//            // Project with non-corrected pose and project back with corrected pose
+//            cv::Mat P3Dw = pMPi->GetWorldPos();
+//            Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
+//            pcl::PointXYZ pts;
+//            pts.x = eigP3Dw[0];
+//            pts.y = eigP3Dw[1];
+//            pts.z = eigP3Dw[2];
+//            cloud_in->push_back(pts);
+//        }
 //    }
 //    cout<<cloud_in->points.size()<<endl;
 //    cout<<cloud_out->points.size()<<endl;
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::io::loadPCDFile<pcl::PointXYZ>(ipda_params.source_cloud_filename, *cloud_in);
-    pcl::io::loadPCDFile<pcl::PointXYZ>(ipda_params.target_cloud_filename, *cloud_out);
+    Eigen::Affine3d res_affine; 
+    bool icp_success = ipda.evaluate(cloud_in, cloud_out, res_affine);//.inverse();
+    res_affine = res_affine.inverse();
+    cout<<res_affine.matrix()<<endl;    
+    if(icp_success)
+    {
+        cout<<"*********************icp finished*********************"<<endl;
+        //save relocalization pose
+        cv::Mat Tcw = mpCurrentKF->GetPose();
+        cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
+        cv::Mat tcw = Tcw.rowRange(0,3).col(3);
+        g2o::Sim3 g2oS_init(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
+        Eigen::Matrix3d res_rot = res_affine.matrix().block<3,3>(0,0);
+        Eigen::Vector3d res_tran = res_affine.matrix().block<3,1>(0,3);
+        g2o::Sim3 g2oS_add(res_rot,res_tran,1.0);
+        mg2oScw = g2oS_add*g2oS_init;
+//        mg2oScw = g2oS_init;
+//        mg2oScw = g2oS_add.inverse()*g2oS_init;
+        const Eigen::Matrix<double,7,7> id = Eigen::Matrix<double,7,7>::Identity();
+        mInformation = Converter::toCvMat(id);
 
-    ipda.evaluate(cloud_in, cloud_out);    
-    //save relocalization pose
-    
+        // add partial pose
+        Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
+        Eigen::Vector3d eigt = mg2oScw.translation();
+        double s = mg2oScw.scale();
+        eigt *=(1./s); 
+        cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
+        cout<<correctedTcw<<endl;
+
+        mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
+        mpCurrentKF->mCurPose = correctedTcw;
+        mpCurrentKF->mCurCov = mInformation;
+        return true;
+    }
+    else return false;
+
+
+//    // Run GICP.
+//    Eigen::Matrix4f res;
+//    Gicp gicp(params);
+//    res = gicp.evaluate(cloud_in, cloud_out);
+//    cout<<res<<endl; 
+//    cout<<"*********************icp finished*********************"<<endl;
+//    //save relocalization pose
+//    cv::Mat Tcw = mpCurrentKF->GetPose();
+//    cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
+//    cv::Mat tcw = Tcw.rowRange(0,3).col(3);
+//    g2o::Sim3 g2oS_init(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
+//    Eigen::Matrix3d res_rot = res.block<3,3>(0,0).cast<double>();
+//    Eigen::Vector3d res_tran = res.block<3,1>(0,3).cast<double>();
+//    g2o::Sim3 g2oS_add(res_rot,res_tran,1.0);
+//    mg2oScw = g2oS_add*g2oS_init;
+//    const Eigen::Matrix<double,7,7> id = Eigen::Matrix<double,7,7>::Identity();
+//    mInformation = Converter::toCvMat(id);
+
+//    // add partial pose
+//    Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
+//    Eigen::Vector3d eigt = mg2oScw.translation();
+//    double s = mg2oScw.scale();
+//    eigt *=(1./s); 
+//    cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
+//    cout<<correctedTcw<<endl;
+
+//    mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
+//    mpCurrentKF->mCurPose = correctedTcw;
+//    mpCurrentKF->mCurCov = mInformation;
+//    return true;    
 }
 
+//bool LoopClosing::ReLocalize()
+//{
+
+
+//    //Relocalization by ICP between local map and 3d prior map
+//    //create matching clouds
+//    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
+//    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ> (mpCurrentKF->mGtVelodyne));
+////    vector<MapPoint*> vpMPsi = mpCurrentKF->GetMapPointMatches();
+////    for(size_t iMP=0, endMPi = vpMPsi.size(); iMP<endMPi; iMP++)
+////    {
+////        MapPoint* pMPi = vpMPsi[iMP];
+////        if(!pMPi)
+////            continue;
+////        if(pMPi->isBad())
+////            continue;
+////        if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
+////            continue;
+
+////        // Project with non-corrected pose and project back with corrected pose
+////        cv::Mat P3Dw = pMPi->GetWorldPos();
+////        Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
+////        pcl::PointXYZ pts;
+////        pts.x = eigP3Dw[0];
+////        pts.y = eigP3Dw[1];
+////        pts.z = eigP3Dw[2];
+////        cloud_in->push_back(pts);
+////    }
+//    mvpCurrentConnectedKFs = mpCurrentKF->GetVectorCovisibleKeyFrames();
+//    mvpCurrentConnectedKFs.push_back(mpCurrentKF);
+//    for(vector<KeyFrame*>::iterator vit=mvpCurrentConnectedKFs.begin(), vend=mvpCurrentConnectedKFs.end(); vit!=vend; vit++)
+//    {
+//        KeyFrame* pKFi = *vit;
+
+//        vector<MapPoint*> vpMPsi = pKFi->GetMapPointMatches();
+//        for(size_t iMP=0, endMPi = vpMPsi.size(); iMP<endMPi; iMP++)
+//        {
+//            MapPoint* pMPi = vpMPsi[iMP];
+//            if(!pMPi)
+//                continue;
+//            if(pMPi->isBad())
+//                continue;
+//            if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
+//                continue;
+
+//            // Project with non-corrected pose and project back with corrected pose
+//            cv::Mat P3Dw = pMPi->GetWorldPos();
+//            Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
+//            pcl::PointXYZ pts;
+//            pts.x = eigP3Dw[0];
+//            pts.y = eigP3Dw[1];
+//            pts.z = eigP3Dw[2];
+//            cloud_in->push_back(pts);
+//        }
+//    }
+//    cout<<"local map points: "<<cloud_in->points.size()<<endl;
+
+//    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+//    icp.setInputCloud(cloud_in);
+//    icp.setInputTarget(cloud_out);
+//    pcl::PointCloud<pcl::PointXYZ> Final;
+//    icp.setRANSACOutlierRejectionThreshold(1.0f); 
+//    icp.align(Final);
+
+
+//    cout<<icp.getFitnessScore(1.0)<<endl;
+//    cout<<icp.getFinalTransformation()<<endl;
+//    
+//    Eigen::Matrix4f icp_result = icp.getFinalTransformation();
+//    Eigen::Matrix3d eigR = icp_result.block<3,3>(0,0).matrix().cast <double> ();
+//    Eigen::Vector3d eigt = icp_result.block<3,1>(0,3).matrix().cast <double> ();
+//    cv::Mat Tww = Converter::toCvSE3(eigR,eigt);
+//    cv::Mat new_T = mpCurrentKF->GetPose()*Tww.inv();
+//    cv::Mat new_R = new_T.rowRange(0,3).colRange(0,3);
+//    cv::Mat new_t = new_T.rowRange(0,3).col(3);
+//    g2o::Sim3 g2oSww(Converter::toMatrix3d(new_R),Converter::toVector3d(new_t),1.0);
+//    if(icp.hasConverged() && icp.getFitnessScore(1.0)<0.4){
+//        mg2oScw = g2oSww;
+//        const Eigen::Matrix<double,7,7> id = Eigen::Matrix<double,7,7>::Identity();
+//        mInformation = Converter::toCvMat(id);
+//        // add partial pose
+//        Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
+//        Eigen::Vector3d eigt = mg2oScw.translation();
+//        double s = mg2oScw.scale();
+//        eigt *=(1./s); //[R t/s;0 1]
+//        cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
+//        cout<<correctedTcw<<endl;
+//        mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
+//        mpCurrentKF->mCurPose = correctedTcw;
+//        mpCurrentKF->mCurCov = mInformation;
+//        return true;
+//    } 
+//    else
+//    {
+//        return false;
+//    }
+//   
+
+//}
 
 void LoopClosing::Localize(bool confident)
 {
@@ -739,7 +928,6 @@ void LoopClosing::Localize(bool confident)
     mLastLoopKFid = mpCurrentKF->mnId;       
 
 }
-
 
 bool LoopClosing::ComputeSim3()
 {

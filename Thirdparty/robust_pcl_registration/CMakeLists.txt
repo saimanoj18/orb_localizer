@@ -10,6 +10,7 @@ ENDIF()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(HDRS_RICP
+  robust_pcl_registration/gicp.h
   robust_pcl_registration/pda.h
   robust_pcl_registration/point_cloud_registration.h
   robust_pcl_registration/point_cloud_registration_params.hpp
@@ -18,6 +19,7 @@ set(HDRS_RICP
   robust_pcl_registration/error_term.hpp)
 #  robust_pcl_registration/utils.hpp)
 set(SRCS_RICP
+  robust_pcl_registration/gicp.cc
   robust_pcl_registration/pda.cc
   robust_pcl_registration/point_cloud_registration.cc)
 
