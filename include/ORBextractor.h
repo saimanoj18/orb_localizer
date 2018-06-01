@@ -21,6 +21,7 @@
 #ifndef ORBEXTRACTOR_H
 #define ORBEXTRACTOR_H
 
+#include <iostream>
 #include <vector>
 #include <list>
 #include <opencv/cv.h>
@@ -28,7 +29,7 @@
 
 namespace ORB_SLAM2
 {
-
+using namespace std;
 class ExtractorNode
 {
 public:

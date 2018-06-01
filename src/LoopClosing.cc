@@ -96,7 +96,7 @@ void LoopClosing::Run()
                 }
                 else{
                     if(ReLocalize()){
-                        Localize(true);
+//                        Localize(true);
                     }
 //                    needRelocalize = true;  
                 }
@@ -139,7 +139,7 @@ bool LoopClosing::DetectLocalize()
     }
 
     //If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
-    if(mpCurrentKF->mnId<mLastLoopKFid+3)
+    if(mpCurrentKF->mnId<mLastLoopKFid+2)
     {
         mpKeyFrameDB->add(mpCurrentKF);
         mpCurrentKF->SetErase();
@@ -450,15 +450,8 @@ bool LoopClosing::ComputeSE3()
             index2++;
             sum_chi2 = sum_chi2 + e12->chi2();
         }
-//        else
-//        {
-//            optimizer.removeEdge(e12);
-//        }
     }
     cout<<index2<<endl;
-
-//    optimizer.initializeOptimization();
-//    optimizer.optimize(100);
 
     // Recover optimized Sim3
     g2o::VertexSim3Expmap* vSim3_recov = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(0));
@@ -478,7 +471,6 @@ bool LoopClosing::ComputeSE3()
  
 
     double matching_err = optimizer.activeRobustChi2()/(double) index;
-//    double matching_err = sum_chi2/(double) index2;
     cout<<"activeRobustChi2() "<<matching_err<<endl;
 
     mInformation = 0.000000001*mInformation;///matching_err;
@@ -498,7 +490,10 @@ bool LoopClosing::ComputeSE3()
     if(matching_err<200 ){//(index*0.3<index2){//
         return true;
     }
-    return false;
+    else{
+        mpCurrentKF->SetPose(correctedTcw);
+        return false;
+    }
 
 
 
@@ -524,10 +519,10 @@ bool LoopClosing::ReLocalize()
     ipda_params.solver_function_tolerance = 1.0e-16;
     ipda_params.source_filter_size = 5.0;
     ipda_params.target_filter_size = 0.0;
-    ipda_params.transformation_epsilon = 1.0e-3;
+    ipda_params.transformation_epsilon = 1.0e-2;
     ipda_params.dimension = 3;
     ipda_params.maximum_iterations = 10;
-    ipda_params.max_neighbours = 2;
+    ipda_params.max_neighbours = 10;
     ipda_params.solver_maximum_iterations = 10;
     ipda_params.solver_num_threads = 8;
     ipda_params.aligned_cloud_filename = "aligned.pcd";
@@ -610,8 +605,9 @@ bool LoopClosing::ReLocalize()
     Eigen::Affine3d res_affine; 
     bool icp_success = ipda.evaluate(cloud_in, cloud_out, res_affine);//.inverse();
     res_affine = res_affine.inverse();
-    cout<<res_affine.matrix()<<endl;    
-    if(icp_success)
+    cout<<res_affine.matrix()<<endl;
+    double sum_res = abs(res_affine(0,3))+abs(res_affine(1,3))+abs(res_affine(2,3));    
+    if(icp_success && sum_res>0.0001)
     {
         cout<<"*********************icp finished*********************"<<endl;
         //save relocalization pose
@@ -625,7 +621,7 @@ bool LoopClosing::ReLocalize()
         mg2oScw = g2oS_add*g2oS_init;
 //        mg2oScw = g2oS_init;
 //        mg2oScw = g2oS_add.inverse()*g2oS_init;
-        const Eigen::Matrix<double,7,7> id = Eigen::Matrix<double,7,7>::Identity();
+        const Eigen::Matrix<double,7,7> id = 100.0*Eigen::Matrix<double,7,7>::Identity();
         mInformation = Converter::toCvMat(id);
 
         // add partial pose
@@ -639,6 +635,7 @@ bool LoopClosing::ReLocalize()
         mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
         mpCurrentKF->mCurPose = correctedTcw;
         mpCurrentKF->mCurCov = mInformation;
+        mpCurrentKF->SetPose(correctedTcw);
         return true;
     }
     else return false;
@@ -744,7 +741,7 @@ bool LoopClosing::ReLocalize()
 //    cout<<icp.getFitnessScore(1.0)<<endl;
 //    cout<<icp.getFinalTransformation()<<endl;
 //    
-//    Eigen::Matrix4f icp_result = icp.getFinalTransformation();
+//    Eigen::Matrix4f icp_result = icp.getFinalTransformation().inverse();
 //    Eigen::Matrix3d eigR = icp_result.block<3,3>(0,0).matrix().cast <double> ();
 //    Eigen::Vector3d eigt = icp_result.block<3,1>(0,3).matrix().cast <double> ();
 //    cv::Mat Tww = Converter::toCvSE3(eigR,eigt);

@@ -70,6 +70,8 @@ int main(int argc, char **argv)
     cv::Mat gtPose;
     for(int ni=0; ni<nImages; ni++)
     {
+//        if(SLAM.GetResetState())ni--;
+
         // Read left and right images from file
         imLeft = cv::imread(vstrImageLeft[ni],CV_LOAD_IMAGE_UNCHANGED);
         imRight = cv::imread(vstrImageRight[ni],CV_LOAD_IMAGE_UNCHANGED);

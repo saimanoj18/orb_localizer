@@ -115,6 +115,8 @@ public:
     bool mbOnlyTracking;
 
     void Reset();
+    
+    void ResetbyRelocalize();//YJ
 
 protected:
 

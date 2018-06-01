@@ -146,16 +146,15 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
 
     // Check reset
     {
-    unique_lock<mutex> lock(mMutexReset);
-    if(mbReset)
-    {
-        mpTracker->Reset();
-        mbReset = false;
-    }
+        unique_lock<mutex> lock(mMutexReset);
+        if(mbReset)
+        {
+            mpTracker->Reset();
+//            mpTracker->ResetbyRelocalize();//YJ
+            mbReset = false;
+        }
     }
     
-
-
     cv::Mat Tcw = mpTracker->GrabImageStereo(imLeft,imRight,timestamp,gtPose,gtVelodyne);
 
     unique_lock<mutex> lock2(mMutexState);
@@ -163,6 +162,7 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
     mReferenceMapPoints = mpMap->GetReferenceMapPoints();
     mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+
     return Tcw;
 }
 
@@ -525,6 +525,12 @@ void System::SaveTrajectoryKITTI(const string &filename)
     }
     f.close();
     cout << endl << "trajectory saved!" << endl;
+}
+
+bool System::GetResetState()
+{
+    unique_lock<mutex> lock(mMutexReset);
+    return mbReset;
 }
 
 int System::GetTrackingState()

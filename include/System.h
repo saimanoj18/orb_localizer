@@ -89,6 +89,7 @@ public:
 
     // Reset the system (clear map)
     void Reset();
+    bool GetResetState();
 
     // All threads will be requested to finish.
     // It waits until all threads have finished.
