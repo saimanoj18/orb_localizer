@@ -105,7 +105,7 @@ protected:
 
     bool DetectLoop();
 
-    bool ComputeSE3();//YJ
+    int ComputeSE3();//YJ
     
     bool ComputeSim3();
 
