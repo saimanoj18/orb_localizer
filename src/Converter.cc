@@ -144,9 +144,9 @@ Eigen::Matrix<double,3,3> Converter::toMatrix3d(const cv::Mat &cvMat3)
     return M;
 }
 
-Eigen::Matrix<double,4,4> Converter::toMatrix4d(const cv::Mat &cvMat4)
+Eigen::Matrix4d Converter::toMatrix4d(const cv::Mat &cvMat4)
 {
-    Eigen::Matrix<double,4,4> M;
+    Eigen::Matrix4d M;
 
     M << cvMat4.at<float>(0,0), cvMat4.at<float>(0,1), cvMat4.at<float>(0,2), cvMat4.at<float>(0,3),
          cvMat4.at<float>(1,0), cvMat4.at<float>(1,1), cvMat4.at<float>(1,2), cvMat4.at<float>(1,3),
@@ -169,6 +169,12 @@ Eigen::Matrix<double,7,7> Converter::toMatrix7d(const cv::Mat &cvMat7)
          cvMat7.at<float>(6,0), cvMat7.at<float>(6,1), cvMat7.at<float>(6,2), cvMat7.at<float>(6,3), cvMat7.at<float>(6,4), cvMat7.at<float>(6,5), cvMat7.at<float>(6,6);
 
     return M;
+}
+Eigen::Vector3d TransformPt(const Eigen::Matrix4d &tran, const Eigen::Vector3d &pt)
+{
+    Eigen::Vector3d tran_pt;
+    tran_pt = tran.block<3,3>(0,0)*pt+tran.block<3,1>(0,3);
+    return tran_pt;
 }
 
 std::vector<float> Converter::toQuaternion(const cv::Mat &M)

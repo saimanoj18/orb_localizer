@@ -140,7 +140,7 @@ bool LoopClosing::DetectLocalize()
     }
 
     //If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
-    if(mpCurrentKF->mnId<mLastLoopKFid+5)
+    if(mpCurrentKF->mnId<mLastLoopKFid+2)
     {
         mpKeyFrameDB->add(mpCurrentKF);
         mpCurrentKF->SetErase();
@@ -352,10 +352,12 @@ int LoopClosing::ComputeSE3()
     // SET SIMILARITY VERTEX
     g2o::VertexDepth * vSim3 = new g2o::VertexDepth();
     vSim3->_fix_scale= true;
-    cv::Mat Tcw = mpCurrentKF->GetPose();
-    cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
-    cv::Mat tcw = Tcw.rowRange(0,3).col(3);
-    g2o::Sim3 g2oS_init(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
+//    cv::Mat Tcw = mpCurrentKF->GetPose();
+//    cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
+//    cv::Mat tcw = Tcw.rowRange(0,3).col(3);
+    Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
+    Eigen::Vector3d t(0,0,0);
+    g2o::Sim3 g2oS_init(R,t,1.0);
     vSim3->setEstimate(g2oS_init);
     vSim3->setId(0);
     vSim3->setFixed(false);
@@ -375,6 +377,7 @@ int LoopClosing::ComputeSE3()
     int numpts = mpCurrentKF->mGtVelodyne.points.size();
     Eigen::Matrix<double, 1, 1> info;
     info << 0.0f;
+    Eigen::Matrix4d camcoordinate = Converter::toMatrix4d(mpCurrentKF->GetPose());
 
     int index = 1;
     vector<g2o::EdgeXYZDepth*> vpEdges;
@@ -382,20 +385,22 @@ int LoopClosing::ComputeSE3()
     for(size_t i=0; i<numpts;i++)
     {
         // Set map points
-        Eigen::Vector3d pts;
-        pts << mpCurrentKF->mGtVelodyne.points[i].x, mpCurrentKF->mGtVelodyne.points[i].y, mpCurrentKF->mGtVelodyne.points[i].z;
+        Eigen::Vector3d pts( mpCurrentKF->mGtVelodyne.points[i].x, mpCurrentKF->mGtVelodyne.points[i].y, mpCurrentKF->mGtVelodyne.points[i].z);
+//        pts << mpCurrentKF->mGtVelodyne.points[i].x, mpCurrentKF->mGtVelodyne.points[i].y, mpCurrentKF->mGtVelodyne.points[i].z;
 
-        Eigen::Vector3d xyz = vSim3->estimate().map(pts);
+//        Eigen::Vector3d xyz = vSim3->estimate().map(pts);
+//        Eigen::Vector3d xyz = Converter::TransformPt(camcoordinate,pts);
+        Eigen::Vector3d xyz = camcoordinate.block<3,3>(0,0)*pts+camcoordinate.block<3,1>(0,3);
         Eigen::Vector2d Ipos( vSim3->cam_map(xyz) );
         int i_idx = ((int)Ipos[1])*vSim3->_width+((int)Ipos[0]);
         
         
-        if ( xyz[2]>0.0f && isfinite(xyz[2]) && xyz[2]<matching_thres && xyz[2]<30.0f ){//
+        if ( xyz[2]>0.0f && isfinite(xyz[2]) && xyz[2]<matching_thres  ){//&& xyz[2]<30.0f
                 if (Ipos[0]<vSim3->_width && Ipos[0]>=0 && Ipos[1]<vSim3->_height && Ipos[1]>=0 && depth_info[i_idx]>5.0)
                 {
                     // SET PointXYZ VERTEX
                     g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
-                    vPoint->setEstimate(pts);
+                    vPoint->setEstimate(xyz);
                     vPoint->setId(index);
                     vPoint->setFixed(true);
 //                    vPoint->setMarginalized(true);
@@ -443,8 +448,12 @@ int LoopClosing::ComputeSE3()
     cout<<index2<<endl;
 
     // Recover optimized Sim3
+    cv::Mat Tcw = mpCurrentKF->GetPose();
+    cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
+    cv::Mat tcw = Tcw.rowRange(0,3).col(3);
+    g2o::Sim3 g2oS_prev(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
     g2o::VertexSim3Expmap* vSim3_recov = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(0));
-    mg2oScw = vSim3_recov->estimate();
+    mg2oScw = vSim3_recov->estimate()*g2oS_prev;
 
     g2o::SparseBlockMatrixXd spinv;
     Eigen::Matrix<double,7,7> marginal_cov;
@@ -476,10 +485,13 @@ int LoopClosing::ComputeSE3()
     mpCurrentKF->mCurPose = correctedTcw;
     mpCurrentKF->mCurCov = mInformation; 
 
-    if(matching_err<500 ) return 0;
+    if(matching_err<500 ){
+         return 0;
+    }
 //    else if (matching_err>500) return 1;
-    else return 2;
-    
+    else{
+        return 2;
+    }    
 
 
 
@@ -501,14 +513,14 @@ bool LoopClosing::ReLocalize()
     ipda_params.point_size_aligned_source = 3.0;
     ipda_params.point_size_source = 3.0;
     ipda_params.point_size_target = 3.0;
-    ipda_params.radius = 0.5;
+    ipda_params.radius = 1.0;
     ipda_params.solver_function_tolerance = 1.0e-16;
     ipda_params.source_filter_size = 5.0;
     ipda_params.target_filter_size = 0.0;
     ipda_params.transformation_epsilon = 1.0e-2;
     ipda_params.dimension = 3;
     ipda_params.maximum_iterations = 10;
-    ipda_params.max_neighbours = 20;
+    ipda_params.max_neighbours = 2;
     ipda_params.solver_maximum_iterations = 10;
     ipda_params.solver_num_threads = 8;
     ipda_params.aligned_cloud_filename = "aligned.pcd";
@@ -583,7 +595,15 @@ bool LoopClosing::ReLocalize()
     bool icp_success = ipda.evaluate(cloud_in, cloud_out, res_affine);//.inverse();
     res_affine = res_affine.inverse();
     cout<<res_affine.matrix()<<endl;
-    double sum_res = abs(res_affine(0,3))+abs(res_affine(1,3))+abs(res_affine(2,3));    
+    double sum_res = abs(res_affine(0,3))+abs(res_affine(1,3))+abs(res_affine(2,3)); 
+
+    {
+        unique_lock<mutex> lock(mMutexLoopQueue);
+        mlpLoopKeyFrameQueue.clear();
+        // Avoid that a keyframe can be erased while it is being process by this thread
+        mpCurrentKF->SetNotErase();
+    }
+   
     if(icp_success && sum_res>0.0001)
     {
         cout<<"*********************icp finished*********************"<<endl;
@@ -596,7 +616,7 @@ bool LoopClosing::ReLocalize()
         Eigen::Vector3d res_tran = res_affine.matrix().block<3,1>(0,3);
         g2o::Sim3 g2oS_add(res_rot,res_tran,1.0);
         mg2oScw = g2oS_add*g2oS_init;
-        const Eigen::Matrix<double,7,7> id = 100.0*Eigen::Matrix<double,7,7>::Identity();
+        const Eigen::Matrix<double,7,7> id = 10000.0*Eigen::Matrix<double,7,7>::Identity();
         mInformation = Converter::toCvMat(id);
 
         // add partial pose
