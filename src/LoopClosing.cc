@@ -95,12 +95,14 @@ void LoopClosing::Run()
                 if(res==0){
                     Localize(true);
                 }
-                else if (res==2){
+                else if (res==1){
                     if(ReLocalize()){
                         Localize(true);
                     }
-//                    needRelocalize = true;  
                 }
+//                else if (res==2){
+//                    needRelocalize = true;  
+//                }
             }
         }    
    
@@ -485,10 +487,10 @@ int LoopClosing::ComputeSE3()
     mpCurrentKF->mCurPose = correctedTcw;
     mpCurrentKF->mCurCov = mInformation; 
 
-    if(matching_err<500 ){
+    if(matching_err<200 ){
          return 0;
     }
-//    else if (matching_err>500) return 1;
+    else if (matching_err<500) return 1;
     else{
         return 2;
     }    
@@ -513,7 +515,7 @@ bool LoopClosing::ReLocalize()
     ipda_params.point_size_aligned_source = 3.0;
     ipda_params.point_size_source = 3.0;
     ipda_params.point_size_target = 3.0;
-    ipda_params.radius = 1.0;
+    ipda_params.radius = 5.0;
     ipda_params.solver_function_tolerance = 1.0e-16;
     ipda_params.source_filter_size = 5.0;
     ipda_params.target_filter_size = 0.0;
@@ -630,7 +632,7 @@ bool LoopClosing::ReLocalize()
         mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
         mpCurrentKF->mCurPose = correctedTcw;
         mpCurrentKF->mCurCov = mInformation;
-        mpCurrentKF->SetPose(correctedTcw);
+//        mpCurrentKF->SetPose(correctedTcw);
         return true;
     }
     else return false;
