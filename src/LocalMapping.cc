@@ -20,6 +20,7 @@
 
 #include "LocalMapping.h"
 #include "LoopClosing.h"
+#include "Localizing.h"
 #include "ORBmatcher.h"
 #include "Optimizer.h"
 
@@ -37,6 +38,11 @@ LocalMapping::LocalMapping(Map *pMap, const float bMonocular):
 void LocalMapping::SetLoopCloser(LoopClosing* pLoopCloser)
 {
     mpLoopCloser = pLoopCloser;
+}
+
+void LocalMapping::SetLocalizer(Localizing* pLocalizer)
+{
+    mpLocalizer = pLocalizer;
 }
 
 void LocalMapping::SetTracker(Tracking *pTracker)
@@ -85,6 +91,7 @@ void LocalMapping::Run()
             }
 
             mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
+            mpLocalizer->InsertKeyFrame(mpCurrentKeyFrame);
         }
         else if(Stop())
         {

@@ -30,6 +30,7 @@
 #include"Map.h"
 #include"LocalMapping.h"
 #include"LoopClosing.h"
+#include"Localizing.h"
 #include"Frame.h"
 #include "ORBVocabulary.h"
 #include"KeyFrameDatabase.h"
@@ -48,6 +49,7 @@ class FrameDrawer;
 class Map;
 class LocalMapping;
 class LoopClosing;
+class Localizing;
 class System;
 
 class Tracking
@@ -65,6 +67,7 @@ public:
 
     void SetLocalMapper(LocalMapping* pLocalMapper);
     void SetLoopClosing(LoopClosing* pLoopClosing);
+    void SetLocalizing(Localizing* pLocalizing);
     void SetViewer(Viewer* pViewer);
 
     // Load new settings
@@ -115,8 +118,6 @@ public:
     bool mbOnlyTracking;
 
     void Reset();
-    
-    void ResetbyRelocalize();//YJ
 
 protected:
 
@@ -156,6 +157,7 @@ protected:
     //Other Thread Pointers
     LocalMapping* mpLocalMapper;
     LoopClosing* mpLoopClosing;
+    Localizing* mpLocalizing;
 
     //ORB
     ORBextractor* mpORBextractorLeft, *mpORBextractorRight;

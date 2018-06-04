@@ -1,25 +1,5 @@
-/**
-* This file is part of ORB-SLAM2.
-*
-* Copyright (C) 2014-2016 Raúl Mur-Artal <raulmur at unizar dot es> (University of Zaragoza)
-* For more information see <https://github.com/raulmur/ORB_SLAM2>
-*
-* ORB-SLAM2 is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* ORB-SLAM2 is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#ifndef LOOPCLOSING_H
-#define LOOPCLOSING_H
+#ifndef LOCALIZAING_H
+#define LOCALIZAING_H
 
 #include "KeyFrame.h"
 #include "LocalMapping.h"
@@ -34,14 +14,12 @@
 #include "Thirdparty/g2o/g2o/core/block_solver.h"
 #include "Thirdparty/g2o/g2o/core/optimization_algorithm_levenberg.h"
 #include "Thirdparty/g2o/g2o/solvers/linear_solver_eigen.h"
-//#include "Thirdparty/g2o/g2o/solvers/g2o_csparse_extension_api.h"
 #include "Thirdparty/g2o/g2o/solvers/linear_solver_csparse.h"
 #include "Thirdparty/g2o/g2o/core/robust_kernel_impl.h"
 #include "Thirdparty/g2o/g2o/solvers/linear_solver_dense.h"
 #include "Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h"
 #include "types_depth.h"
 
-//#include <gflags/gflags.h>
 #include "Thirdparty/robust_pcl_registration/robust_pcl_registration/pda.h"
 #include "Thirdparty/robust_pcl_registration/robust_pcl_registration/gicp.h"
 
@@ -54,7 +32,7 @@ class KeyFrameDatabase;
 class System;
 
 
-class LoopClosing
+class Localizing
 {
 public:
 
@@ -64,7 +42,7 @@ public:
 
 public:
 
-    LoopClosing(Map* pMap, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale);
+    Localizing(Map* pMap, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale);
 
     void SetTracker(Tracking* pTracker);
 
@@ -76,8 +54,6 @@ public:
     void InsertKeyFrame(KeyFrame *pKF);
 
     void RequestReset();
-
-    bool needRelocalize;
 
     bool isRunningGBA(){
         unique_lock<std::mutex> lock(mMutexGBA);
@@ -124,9 +100,6 @@ protected:
 
     LocalMapping *mpLocalMapper;
 
-    // System
-//    System* mpSystem;
-
     std::list<KeyFrame*> mlpLoopKeyFrameQueue;
 
     std::mutex mMutexLoopQueue;
@@ -164,4 +137,4 @@ protected:
 
 } //namespace ORB_SLAM
 
-#endif // LOOPCLOSING_H
+#endif // LOCALIZAING_H
