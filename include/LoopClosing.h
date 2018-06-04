@@ -92,6 +92,8 @@ public:
 
     bool isFinished();
 
+    double matching_err;
+
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 protected:

@@ -108,7 +108,7 @@ bool LoopClosing::DetectLocalize()
     }
 
     //If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
-    if(mpCurrentKF->mnId<mLastLoopKFid+3)
+    if(mpCurrentKF->mnId<mLastLoopKFid+2)
     {
         mpKeyFrameDB->add(mpCurrentKF);
         mpCurrentKF->SetErase();
@@ -308,7 +308,7 @@ bool LoopClosing::ComputeSE3()
     delete [] depth_info;
  
 
-    double matching_err = optimizer.activeRobustChi2()/(double) index;
+    matching_err = optimizer.activeRobustChi2()/(double) index;
     cout<<"activeRobustChi2() "<<matching_err<<endl;
 
     mInformation = 0.000000001*mInformation;///matching_err;

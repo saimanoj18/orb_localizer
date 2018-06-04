@@ -107,7 +107,7 @@ bool Localizing::DetectLocalize()
     }
 
     //If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
-    if(mpCurrentKF->mnId<mLastLoopKFid+10)
+    if(mpCurrentKF->mnId<mLastLoopKFid+2)
     {
         mpKeyFrameDB->add(mpCurrentKF);
         mpCurrentKF->SetErase();
@@ -138,11 +138,11 @@ bool Localizing::ComputeSE3()
     ipda_params.solver_function_tolerance = 1.0e-16;
     ipda_params.source_filter_size = 5.0;
     ipda_params.target_filter_size = 0.0;
-    ipda_params.transformation_epsilon = 1.0e-2;
+    ipda_params.transformation_epsilon = 1.0e-3;
     ipda_params.dimension = 3;
-    ipda_params.maximum_iterations = 10;
+    ipda_params.maximum_iterations = 100;
     ipda_params.max_neighbours = 1;
-    ipda_params.solver_maximum_iterations = 10;
+    ipda_params.solver_maximum_iterations = 100;
     ipda_params.solver_num_threads = 8;
     ipda_params.aligned_cloud_filename = "aligned.pcd";
     ipda_params.frame_id = "map";
@@ -198,7 +198,7 @@ bool Localizing::ComputeSE3()
             cv::Mat P3Dw = pMPi->GetWorldPos();
             Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
             Eigen::Vector3d xyz = camcoordinate.block<3,3>(0,0)*eigP3Dw+camcoordinate.block<3,1>(0,3);
-            if(xyz[2]<80.0f && xyz[2]>-80.0f ){
+            if(xyz[2]<60.0f && xyz[2]>-60.0f ){
                 pcl::PointXYZ pts;
                 pts.x = eigP3Dw[0];
                 pts.y = eigP3Dw[1];
@@ -239,7 +239,7 @@ bool Localizing::ComputeSE3()
         Eigen::Vector3d res_tran = res_affine.matrix().block<3,1>(0,3);
         g2o::Sim3 g2oS_add(res_rot,res_tran,1.0);
         mg2oScw = g2oS_add*g2oS_init;
-        const Eigen::Matrix<double,7,7> id = 10000.0*Eigen::Matrix<double,7,7>::Identity();
+        const Eigen::Matrix<double,7,7> id = 1000.0*Eigen::Matrix<double,7,7>::Identity();
         mInformation = Converter::toCvMat(id);
 
         // add partial pose
