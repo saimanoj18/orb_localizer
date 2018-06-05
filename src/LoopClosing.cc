@@ -329,6 +329,7 @@ bool LoopClosing::ComputeSE3()
          return true;
     }
     else{
+        if(matching_err==0)matching_err =1000;
         return false;
     }    
 

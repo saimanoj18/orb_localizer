@@ -134,10 +134,10 @@ bool Localizing::ComputeSE3()
     ipda_params.point_size_aligned_source = 3.0;
     ipda_params.point_size_source = 3.0;
     ipda_params.point_size_target = 3.0;
-    ipda_params.radius = 5.0;
+    ipda_params.radius = matching_err/100.0;
     ipda_params.solver_function_tolerance = 1.0e-16;
-    ipda_params.source_filter_size = 5.0;
-    ipda_params.target_filter_size = 0.0;
+    ipda_params.source_filter_size = 0.0;
+    ipda_params.target_filter_size = 5.0;
     ipda_params.transformation_epsilon = 1.0e-3;
     ipda_params.dimension = 3;
     ipda_params.maximum_iterations = 100;
@@ -153,29 +153,6 @@ bool Localizing::ComputeSE3()
     //load point clouds    
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out (new pcl::PointCloud<pcl::PointXYZ> (mpCurrentKF->mGtVelodyne));
-    
-//    vector<MapPoint*> vpMPsi = mpCurrentKF->GetMapPointMatches();
-//    for(size_t iMP=0, endMPi = vpMPsi.size(); iMP<endMPi; iMP++)
-//    {
-//        MapPoint* pMPi = vpMPsi[iMP];
-//        if(!pMPi)
-//            continue;
-//        if(pMPi->isBad())
-//            continue;
-//        if(pMPi->mnCorrectedByKF==mpCurrentKF->mnId)
-//            continue;
-
-//        // Project with non-corrected pose and project back with corrected pose
-//        cv::Mat P3Dw = pMPi->GetWorldPos();
-//        Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
-//        pcl::PointXYZ pts;
-//        pts.x = eigP3Dw[0];
-//        pts.y = eigP3Dw[1];
-//        pts.z = eigP3Dw[2];
-//        cloud_in->push_back(pts);
-//    }
-//    cout<<cloud_in->points.size()<<endl;
-//    cout<<cloud_out->points.size()<<endl;
 
     mvpCurrentConnectedKFs = mpCurrentKF->GetVectorCovisibleKeyFrames();
     mvpCurrentConnectedKFs.push_back(mpCurrentKF);
@@ -198,7 +175,9 @@ bool Localizing::ComputeSE3()
             cv::Mat P3Dw = pMPi->GetWorldPos();
             Eigen::Matrix<double,3,1> eigP3Dw = Converter::toVector3d(P3Dw);
             Eigen::Vector3d xyz = camcoordinate.block<3,3>(0,0)*eigP3Dw+camcoordinate.block<3,1>(0,3);
-            if(xyz[2]<60.0f && xyz[2]>-60.0f ){
+            
+//            if( (xyz[2]<60.0f && xyz[2]>3.0f) || (xyz[2]>-60.0f &&xyz[2]<-3.0f) ){
+            if( xyz.norm()>0.0f && xyz.norm()<50.0f){
                 pcl::PointXYZ pts;
                 pts.x = eigP3Dw[0];
                 pts.y = eigP3Dw[1];
@@ -217,6 +196,7 @@ bool Localizing::ComputeSE3()
     Eigen::Affine3d res_affine; 
     bool icp_success = ipda.evaluate(cloud_in, cloud_out, res_affine);//.inverse();
     res_affine = res_affine.inverse();
+//    res_affine(1,3) = 0;
     cout<<res_affine.matrix()<<endl;
     double sum_res = abs(res_affine(0,3))+abs(res_affine(1,3))+abs(res_affine(2,3)); 
 
@@ -227,7 +207,7 @@ bool Localizing::ComputeSE3()
         mpCurrentKF->SetNotErase();
     }
    
-    if(icp_success && sum_res>0.0001)
+    if(icp_success )//&& sum_res>0.0001)
     {
         cout<<"*********************icp finished*********************"<<endl;
         //save relocalization pose
@@ -331,7 +311,7 @@ void Localizing::Localize()
                 cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt); 
                 pKFi->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTiw, mInformation));
                 pKFi->mCurPose = correctedTiw;
-                pKFi->mCurCov = mInformation;
+                pKFi->mCurCov = mInformation*0.001;
             }
 
             cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);

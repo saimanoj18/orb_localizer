@@ -1205,8 +1205,9 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pCurKF,
             e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
             e->setMeasurement(Sji);
 //            e->information() = matLambda*0.001;
-            if(is_lm_i && is_lm_j)e->information() = matLambda*0.001;
-            else e->information() = matLambda*100;//info;
+            e->information() = matLambda*100;
+//            if(is_lm_i && is_lm_j)e->information() = matLambda*0.001;
+//            else e->information() = matLambda*100;//info;
             optimizer.addEdge(e);
         }
         

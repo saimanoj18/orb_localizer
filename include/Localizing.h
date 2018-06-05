@@ -67,6 +67,10 @@ public:
     void RequestFinish();
 
     bool isFinished();
+    
+    void setMatchingErr(double err){
+        matching_err = err;
+    }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -132,6 +136,7 @@ protected:
 
     bool mnFullBAIdx;
 
+    double matching_err;
 
 };
 

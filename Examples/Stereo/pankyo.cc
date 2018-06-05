@@ -68,10 +68,10 @@ int main(int argc, char **argv)
         imLeft = cv::imread(vstrImageLeft[ni],CV_LOAD_IMAGE_UNCHANGED);
         imRight = cv::imread(vstrImageRight[ni],CV_LOAD_IMAGE_UNCHANGED);
 
-//        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
-//        clahe->setClipLimit(5);
-//        clahe->apply(imLeft,imLeft);
-//        clahe->apply(imRight,imRight);
+        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+        clahe->setClipLimit(5);
+        clahe->apply(imLeft,imLeft);
+        clahe->apply(imRight,imRight);
 
 
         
