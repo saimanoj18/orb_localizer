@@ -108,7 +108,7 @@ bool LoopClosing::DetectLocalize()
     }
 
     //If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
-    if(mpCurrentKF->mnId<mLastLoopKFid+2)
+    if(mpCurrentKF->mnId<mLastLoopKFid+3)
     {
         mpKeyFrameDB->add(mpCurrentKF);
         mpCurrentKF->SetErase();
@@ -329,7 +329,7 @@ bool LoopClosing::ComputeSE3()
          return true;
     }
     else{
-        if(matching_err==0)matching_err =1000;
+        if(index2<=1000)matching_err =10000;
         return false;
     }    
 

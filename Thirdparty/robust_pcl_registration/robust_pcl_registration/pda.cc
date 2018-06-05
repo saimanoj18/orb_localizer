@@ -128,7 +128,7 @@ bool Ipda::evaluate(
     }
     previous_transformation = current_transformation;
   }
-  return false;
-//  if(transformation_epsilon<params_.transformation_epsilon*10.0)return true;
-//  else return false;
+//  return false;
+  if(transformation_epsilon<params_.transformation_epsilon*10.0)return true;
+  else return false;
 }

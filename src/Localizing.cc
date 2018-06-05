@@ -106,13 +106,13 @@ bool Localizing::DetectLocalize()
         mpCurrentKF->SetNotErase();
     }
 
-    //If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
-    if(mpCurrentKF->mnId<mLastLoopKFid+2)
-    {
-        mpKeyFrameDB->add(mpCurrentKF);
-        mpCurrentKF->SetErase();
-        return false;
-    }
+//    //If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
+//    if(mpCurrentKF->mnId<mLastLoopKFid+2)
+//    {
+//        mpKeyFrameDB->add(mpCurrentKF);
+//        mpCurrentKF->SetErase();
+//        return false;
+//    }
 
     return true;
 
@@ -200,15 +200,15 @@ bool Localizing::ComputeSE3()
     cout<<res_affine.matrix()<<endl;
     double sum_res = abs(res_affine(0,3))+abs(res_affine(1,3))+abs(res_affine(2,3)); 
 
-    {
-        unique_lock<mutex> lock(mMutexLoopQueue);
-        mlpLoopKeyFrameQueue.clear();
-        // Avoid that a keyframe can be erased while it is being process by this thread
-        mpCurrentKF->SetNotErase();
-    }
    
     if(icp_success )//&& sum_res>0.0001)
     {
+        {
+            unique_lock<mutex> lock(mMutexLoopQueue);
+            mlpLoopKeyFrameQueue.clear();
+            // Avoid that a keyframe can be erased while it is being process by this thread
+            mpCurrentKF->SetNotErase();
+        }
         cout<<"*********************icp finished*********************"<<endl;
         //save relocalization pose
         cv::Mat Tcw = mpCurrentKF->GetPose();
@@ -311,7 +311,7 @@ void Localizing::Localize()
                 cv::Mat correctedTiw = Converter::toCvSE3(eigR,eigt); 
                 pKFi->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTiw, mInformation));
                 pKFi->mCurPose = correctedTiw;
-                pKFi->mCurCov = mInformation*0.001;
+                pKFi->mCurCov = mInformation;//*0.001;
             }
 
             cv::Mat Riw = Tiw.rowRange(0,3).colRange(0,3);
