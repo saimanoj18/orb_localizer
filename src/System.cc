@@ -95,7 +95,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
 
     //Initialize the Localizing thread and launch
-    mpLocalizer = new Localizing(mpMap, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR);
+    mpLocalizer = new Localizing(mpMap, mpKeyFrameDatabase, mpVocabulary, strSettingsFile, mSensor!=MONOCULAR);
     mptLocalizing = new thread(&ORB_SLAM2::Localizing::Run, mpLocalizer);
 
     //Initialize the Viewer thread and launch

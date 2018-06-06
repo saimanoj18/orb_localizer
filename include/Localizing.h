@@ -42,7 +42,7 @@ public:
 
 public:
 
-    Localizing(Map* pMap, KeyFrameDatabase* pDB, ORBVocabulary* pVoc,const bool bFixScale);
+    Localizing(Map* pMap, KeyFrameDatabase* pDB, ORBVocabulary* pVoc, const string &strSettingPath, const bool bFixScale);
 
     void SetTracker(Tracking* pTracker);
 
@@ -137,6 +137,15 @@ protected:
     bool mnFullBAIdx;
 
     double matching_err;
+
+    //ICP params
+    float mparamsdof; 
+    float msfilter;
+    float mtfilter;
+    float mtransfepsilon;
+    int mmaxiterations;
+    int mmaxneighbours;
+    int msolveriteration;
 
 };
 

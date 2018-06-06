@@ -35,12 +35,22 @@
 namespace ORB_SLAM2
 {
 
-Localizing::Localizing(Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, const bool bFixScale):
+Localizing::Localizing(Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, const string &strSettingPath, const bool bFixScale):
     mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap), //mpSystem(pSys),
     mpKeyFrameDB(pDB), mpORBVocabulary(pVoc), mpMatchedKF(NULL), mLastLoopKFid(0), mbRunningGBA(false), mbFinishedGBA(true),
     mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0)
 {
     mnCovisibilityConsistencyTh = 3;
+
+    cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
+
+    mparamsdof = fSettings["ICP.ipda_params_dof"];
+    msfilter = fSettings["ICP.source_filter_size"];
+    mtfilter = fSettings["ICP.target_filter_size"];
+    mtransfepsilon = fSettings["ICP.transformation_epsilon"];
+    mmaxiterations = fSettings["ICP.maximum_iterations"];
+    mmaxneighbours = fSettings["ICP.max_neighbours"];
+    msolveriteration = fSettings["ICP.solver_maximum_iterations"];
 }
 
 void Localizing::SetTracker(Tracking *pTracker)
@@ -130,19 +140,19 @@ bool Localizing::ComputeSE3()
     ipda_params.solver_use_nonmonotonic_steps = true;
     ipda_params.use_gaussian = true;
     ipda_params.visualize_clouds = false;
-    ipda_params.dof = 100.0;
+    ipda_params.dof = mparamsdof;
     ipda_params.point_size_aligned_source = 3.0;
     ipda_params.point_size_source = 3.0;
     ipda_params.point_size_target = 3.0;
     ipda_params.radius = matching_err/100.0;
     ipda_params.solver_function_tolerance = 1.0e-16;
-    ipda_params.source_filter_size = 0.0;
-    ipda_params.target_filter_size = 5.0;
-    ipda_params.transformation_epsilon = 1.0e-3;
+    ipda_params.source_filter_size = msfilter;
+    ipda_params.target_filter_size = mtfilter;
+    ipda_params.transformation_epsilon = mtransfepsilon;
     ipda_params.dimension = 3;
-    ipda_params.maximum_iterations = 100;
-    ipda_params.max_neighbours = 1;
-    ipda_params.solver_maximum_iterations = 100;
+    ipda_params.maximum_iterations = mmaxiterations;
+    ipda_params.max_neighbours = mmaxneighbours;
+    ipda_params.solver_maximum_iterations = msolveriteration;
     ipda_params.solver_num_threads = 8;
     ipda_params.aligned_cloud_filename = "aligned.pcd";
     ipda_params.frame_id = "map";
