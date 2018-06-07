@@ -152,7 +152,7 @@ bool Localizing::ComputeSE3()
     ipda_params.dimension = 3;
     ipda_params.maximum_iterations = mmaxiterations;
     ipda_params.max_neighbours = mmaxneighbours;
-    ipda_params.solver_maximum_iterations = msolveriteration;
+    ipda_params.solver_maximum_iterations = ((int)matching_err)-msolveriteration;
     ipda_params.solver_num_threads = 8;
     ipda_params.aligned_cloud_filename = "aligned.pcd";
     ipda_params.frame_id = "map";
@@ -187,7 +187,7 @@ bool Localizing::ComputeSE3()
             Eigen::Vector3d xyz = camcoordinate.block<3,3>(0,0)*eigP3Dw+camcoordinate.block<3,1>(0,3);
             
 //            if( (xyz[2]<60.0f && xyz[2]>3.0f) || (xyz[2]>-60.0f &&xyz[2]<-3.0f) ){
-            if( xyz.norm()>0.0f && xyz.norm()<50.0f){
+            if( xyz.norm()>0.0f && xyz.norm()<60.0f){
                 pcl::PointXYZ pts;
                 pts.x = eigP3Dw[0];
                 pts.y = eigP3Dw[1];
@@ -206,9 +206,8 @@ bool Localizing::ComputeSE3()
     Eigen::Affine3d res_affine; 
     bool icp_success = ipda.evaluate(cloud_in, cloud_out, res_affine);//.inverse();
     res_affine = res_affine.inverse();
-//    res_affine(1,3) = 0;
     cout<<res_affine.matrix()<<endl;
-    double sum_res = abs(res_affine(0,3))+abs(res_affine(1,3))+abs(res_affine(2,3)); 
+//    double sum_res = abs(res_affine(0,3))+abs(res_affine(1,3))+abs(res_affine(2,3)); 
 
    
     if(icp_success )//&& sum_res>0.0001)

@@ -235,7 +235,7 @@ bool LoopClosing::ComputeSE3()
         int i_idx = ((int)Ipos[1])*vSim3->_width+((int)Ipos[0]);
         
         
-        if ( xyz[2]>0.0f && isfinite(xyz[2]) && xyz[2]<matching_thres && xyz[2]<30.0f ){//
+        if ( xyz[2]>0.0f && isfinite(xyz[2]) && xyz[2]<matching_thres && xyz[2]<35.0f ){//
                 if (Ipos[0]<vSim3->_width && Ipos[0]>=0 && Ipos[1]<vSim3->_height && Ipos[1]>=0 && depth_info[i_idx]>5.0)
                 {
                     // SET PointXYZ VERTEX
@@ -325,11 +325,12 @@ bool LoopClosing::ComputeSE3()
     mpCurrentKF->mCurPose = correctedTcw;
     mpCurrentKF->mCurCov = mInformation; 
 
-    if(index2>1000 && matching_err<500 ){
+    if(index2>1000 && matching_err<400 ){
          return true;
     }
     else{
-        if(index2<=1000)matching_err =10000;
+        if(index2<=1000)matching_err=400;
+//        matching_err=0;
         return false;
     }    
 

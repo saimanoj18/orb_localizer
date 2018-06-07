@@ -73,6 +73,9 @@ bool Ipda::evaluate(
   options.num_threads = params_.solver_num_threads;
   ceres::Solver::Summary summary;
 
+  //convergence parameters
+  double change_cost = 0;
+
   for (size_t iter = 0u; iter < params_.maximum_iterations; ++iter) {
     pcl::KdTreeFLANN<PointType> kdtree;
     kdtree.setInputCloud(target_cloud);
@@ -95,6 +98,7 @@ bool Ipda::evaluate(
           *aligned_source, *target_cloud, data_association, params);
     registration.solve(options, &summary);
 //    VLOG(100) << summary.FullReport();
+    change_cost += (summary.initial_cost-summary.final_cost);
 
     const Eigen::Affine3d current_transformation = registration.transformation();
     final_transformation = current_transformation * final_transformation;
@@ -124,10 +128,12 @@ bool Ipda::evaluate(
 //    LOG(INFO) << "Transformation epsilon: " << transformation_epsilon;
     if (transformation_epsilon < params_.transformation_epsilon) {
 //      LOG(INFO) << "IPDA converged." << std::endl;
-      if(iter>1)return true;//final_transformation;
+//      cout<<"change_cost: "<<change_cost<<endl;
+      if(change_cost>0.1)return true;//final_transformation;
     }
     previous_transformation = current_transformation;
   }
+//  cout<<"change_cost: "<<change_cost<<endl;
   return false;
 //  if(transformation_epsilon<params_.transformation_epsilon*10.0)return true;
 //  else return false;
