@@ -10,7 +10,7 @@ ICP.target_filter_size: 10.0
 ICP.transformation_epsilon: 1.0e-3
 ICP.maximum_iterations: 100
 ICP.max_neighbours: 1
-ICP.solver_maximum_iterations: 150
+ICP.solver_maximum_iterations: 200
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!

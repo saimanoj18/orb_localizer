@@ -187,7 +187,7 @@ bool Localizing::ComputeSE3()
             Eigen::Vector3d xyz = camcoordinate.block<3,3>(0,0)*eigP3Dw+camcoordinate.block<3,1>(0,3);
             
 //            if( (xyz[2]<60.0f && xyz[2]>3.0f) || (xyz[2]>-60.0f &&xyz[2]<-3.0f) ){
-            if( xyz.norm()>0.0f && xyz.norm()<60.0f){
+            if( xyz.norm()>0.0f && xyz.norm()<50.0f){
                 pcl::PointXYZ pts;
                 pts.x = eigP3Dw[0];
                 pts.y = eigP3Dw[1];
