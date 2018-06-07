@@ -207,8 +207,7 @@ bool Localizing::ComputeSE3()
     bool icp_success = ipda.evaluate(cloud_in, cloud_out, res_affine);//.inverse();
     res_affine = res_affine.inverse();
     cout<<res_affine.matrix()<<endl;
-//    double sum_res = abs(res_affine(0,3))+abs(res_affine(1,3))+abs(res_affine(2,3)); 
-
+//    mLastLoopKFid = mpCurrentKF->mnId;    
    
     if(icp_success )//&& sum_res>0.0001)
     {

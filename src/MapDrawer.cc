@@ -131,7 +131,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph)
     if(bDrawGraph)
     {
         glLineWidth(mGraphLineWidth);
-        glColor4f(0.0f,0.0f,1.0f,0.6f);
+        glColor4f(0.0f,1.0f,0.0f,0.6f);
         glBegin(GL_LINES);
 
         for(size_t i=0; i<vpKFs.size(); i++)
@@ -273,7 +273,7 @@ void MapDrawer::DrawCurrentCamera(pangolin::OpenGlMatrix &Twc)
 #endif
 
     glLineWidth(mCameraLineWidth);
-    glColor3f(0.0f,0.0f,1.0f);
+    glColor3f(0.0f,1.0f,0.0f);
     glBegin(GL_LINES);
     glVertex3f(0,0,0);
     glVertex3f(w,h,z);

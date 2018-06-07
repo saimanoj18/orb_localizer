@@ -130,6 +130,7 @@ bool Ipda::evaluate(
 //      LOG(INFO) << "IPDA converged." << std::endl;
 //      cout<<"change_cost: "<<change_cost<<endl;
       if(change_cost>0.1)return true;//final_transformation;
+      else return false;
     }
     previous_transformation = current_transformation;
   }
