@@ -144,7 +144,7 @@ bool Localizing::ComputeSE3()
     ipda_params.point_size_aligned_source = 3.0;
     ipda_params.point_size_source = 3.0;
     ipda_params.point_size_target = 3.0;
-    ipda_params.radius = matching_err/100.0;
+    ipda_params.radius = 2.0+matching_err/150.0;
     ipda_params.solver_function_tolerance = 1.0e-16;
     ipda_params.source_filter_size = msfilter;
     ipda_params.target_filter_size = mtfilter;
@@ -153,7 +153,7 @@ bool Localizing::ComputeSE3()
     ipda_params.maximum_iterations = mmaxiterations;
     ipda_params.max_neighbours = mmaxneighbours;
     ipda_params.solver_maximum_iterations = ((int)matching_err)-msolveriteration;
-    ipda_params.solver_num_threads = 8;
+    ipda_params.solver_num_threads = 100;
     ipda_params.aligned_cloud_filename = "aligned.pcd";
     ipda_params.frame_id = "map";
     ipda_params.source_cloud_filename = "source.pcd";
@@ -187,7 +187,7 @@ bool Localizing::ComputeSE3()
             Eigen::Vector3d xyz = camcoordinate.block<3,3>(0,0)*eigP3Dw+camcoordinate.block<3,1>(0,3);
             
 //            if( (xyz[2]<60.0f && xyz[2]>3.0f) || (xyz[2]>-60.0f &&xyz[2]<-3.0f) ){
-            if( xyz.norm()>0.0f && xyz.norm()<50.0f){
+            if( xyz.norm()>0.0f && xyz.norm()<50.0f && xyz[1]>-5.0f){
                 pcl::PointXYZ pts;
                 pts.x = eigP3Dw[0];
                 pts.y = eigP3Dw[1];
@@ -196,6 +196,7 @@ bool Localizing::ComputeSE3()
             }
         }
     }
+    cout<<"*********************icp starts*********************"<<matching_err<<endl;
     cout<<cloud_in->points.size()<<endl;
     cout<<cloud_out->points.size()<<endl;
 

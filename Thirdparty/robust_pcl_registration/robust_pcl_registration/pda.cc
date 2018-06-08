@@ -129,8 +129,9 @@ bool Ipda::evaluate(
     if (transformation_epsilon < params_.transformation_epsilon) {
 //      LOG(INFO) << "IPDA converged." << std::endl;
 //      cout<<"change_cost: "<<change_cost<<endl;
-      if(change_cost>0.1)return true;//final_transformation;
-      else return false;
+      return true;
+//      if(change_cost>0.1)return true;//final_transformation;
+//      else return false;
     }
     previous_transformation = current_transformation;
   }
