@@ -325,11 +325,11 @@ bool LoopClosing::ComputeSE3()
     mpCurrentKF->mCurPose = correctedTcw;
     mpCurrentKF->mCurCov = mInformation; 
 
-    if(index2>1000 && matching_err<400 ){
+    if(index2>1000 && matching_err<300 ){
          return true;
     }
     else{
-        if(index2<=1000)matching_err=400;
+        matching_err=500;
         return false;
     }    
 
@@ -350,7 +350,7 @@ void LoopClosing::Localize()
     // Wait until Local Mapping has effectively stopped
     while(!mpLocalMapper->isStopped())
     {
-        usleep(1000);
+        usleep(100);
     }
 
     // Ensure current keyframe is updated

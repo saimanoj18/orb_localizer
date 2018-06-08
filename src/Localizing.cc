@@ -210,12 +210,6 @@ bool Localizing::ComputeSE3()
    
     if(icp_success )//&& sum_res>0.0001)
     {
-        {
-            unique_lock<mutex> lock(mMutexLoopQueue);
-            mlpLoopKeyFrameQueue.clear();
-            // Avoid that a keyframe can be erased while it is being process by this thread
-            mpCurrentKF->SetNotErase();
-        }
         cout<<"*********************icp finished*********************"<<endl;
         //save relocalization pose
         cv::Mat Tcw = mpCurrentKF->GetPose();
@@ -259,7 +253,7 @@ void Localizing::Localize()
     // Wait until Local Mapping has effectively stopped
     while(!mpLocalMapper->isStopped())
     {
-        usleep(1000);
+        usleep(100);
     }
 
     // Ensure current keyframe is updated
@@ -369,7 +363,14 @@ void Localizing::Localize()
     // Loop closed. Release Local Mapping.
     mpLocalMapper->Release();  
 
-    mLastLoopKFid = mpCurrentKF->mnId;       
+    mLastLoopKFid = mpCurrentKF->mnId;
+
+    {
+        unique_lock<mutex> lock(mMutexLoopQueue);
+        mlpLoopKeyFrameQueue.clear();
+        // Avoid that a keyframe can be erased while it is being process by this thread
+        mpCurrentKF->SetNotErase();
+    }       
 
 }
 
