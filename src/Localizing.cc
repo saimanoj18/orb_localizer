@@ -206,8 +206,7 @@ bool Localizing::ComputeSE3()
     Eigen::Affine3d res_affine; 
     bool icp_success = ipda.evaluate(cloud_in, cloud_out, res_affine);//.inverse();
     res_affine = res_affine.inverse();
-    cout<<res_affine.matrix()<<endl;
-//    mLastLoopKFid = mpCurrentKF->mnId;    
+    cout<<res_affine.matrix()<<endl;  
    
     if(icp_success )//&& sum_res>0.0001)
     {
@@ -241,7 +240,7 @@ bool Localizing::ComputeSE3()
         mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
         mpCurrentKF->mCurPose = correctedTcw;
         mpCurrentKF->mCurCov = mInformation;
-//        mpCurrentKF->SetPose(correctedTcw);
+
         return true;
     }
     else return false;
@@ -256,21 +255,6 @@ void Localizing::Localize()
     // Send a stop signal to Local Mapping
     // Avoid new keyframes are inserted while correcting the loop
     mpLocalMapper->RequestStop();
-
-    // If a Global Bundle Adjustment is running, abort it
-    if(isRunningGBA())
-    {
-        unique_lock<mutex> lock(mMutexGBA);
-        mbStopGBA = true;
-
-        mnFullBAIdx++;
-
-        if(mpThreadGBA)
-        {
-            mpThreadGBA->detach();
-            delete mpThreadGBA;
-        }
-    }
 
     // Wait until Local Mapping has effectively stopped
     while(!mpLocalMapper->isStopped())

@@ -330,7 +330,6 @@ bool LoopClosing::ComputeSE3()
     }
     else{
         if(index2<=1000)matching_err=400;
-//        matching_err=0;
         return false;
     }    
 
@@ -347,20 +346,6 @@ void LoopClosing::Localize()
     // Avoid new keyframes are inserted while correcting the loop
     mpLocalMapper->RequestStop();
 
-    // If a Global Bundle Adjustment is running, abort it
-    if(isRunningGBA())
-    {
-        unique_lock<mutex> lock(mMutexGBA);
-        mbStopGBA = true;
-
-        mnFullBAIdx++;
-
-        if(mpThreadGBA)
-        {
-            mpThreadGBA->detach();
-            delete mpThreadGBA;
-        }
-    }
 
     // Wait until Local Mapping has effectively stopped
     while(!mpLocalMapper->isStopped())
