@@ -53,6 +53,8 @@ public:
 
     void InsertKeyFrame(KeyFrame *pKF);
 
+    void InsertKeyFrameAndErr(KeyFrame *pKF, double err);
+
     void RequestReset();
 
     bool isRunningGBA(){
@@ -109,6 +111,10 @@ protected:
     std::list<KeyFrame*> mlpLoopKeyFrameQueue;
 
     std::mutex mMutexLoopQueue;
+
+    std::list<double> mlpLoopErrQueue;
+
+    std::mutex mMutexLoopErrQueue;
 
     // Loop detector parameters
     float mnCovisibilityConsistencyTh;

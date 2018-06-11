@@ -94,6 +94,10 @@ public:
 
     double matching_err;
 
+    KeyFrame* GetCurrentKF(){
+        return mpCurrentKF;
+    }
+
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 protected:

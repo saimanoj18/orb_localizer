@@ -94,9 +94,20 @@ void Localizing::Run()
 
 void Localizing::InsertKeyFrame(KeyFrame *pKF)
 {
-    unique_lock<mutex> lock(mMutexLoopQueue);
-    if(pKF->mnId!=0)
+    if(pKF->mnId!=0){
+        unique_lock<mutex> lock(mMutexLoopQueue);
         mlpLoopKeyFrameQueue.push_back(pKF);
+    }
+}
+
+void Localizing::InsertKeyFrameAndErr(KeyFrame *pKF, double err)
+{
+    if(pKF->mnId!=0){
+        unique_lock<mutex> lock(mMutexLoopQueue);
+        mlpLoopKeyFrameQueue.push_back(pKF);
+        unique_lock<mutex> lock2(mMutexLoopErrQueue);
+        mlpLoopErrQueue.push_back(err);
+    }
 }
 
 bool Localizing::CheckNewKeyFrames()
@@ -112,6 +123,9 @@ bool Localizing::DetectLocalize()
         unique_lock<mutex> lock(mMutexLoopQueue);
         mpCurrentKF = mlpLoopKeyFrameQueue.back();
         mlpLoopKeyFrameQueue.pop_back();
+        unique_lock<mutex> lock2(mMutexLoopErrQueue);
+        matching_err = mlpLoopErrQueue.back();
+        mlpLoopErrQueue.pop_back();
         // Avoid that a keyframe can be erased while it is being process by this thread
         mpCurrentKF->SetNotErase();
     }
@@ -144,7 +158,7 @@ bool Localizing::ComputeSE3()
     ipda_params.point_size_aligned_source = 3.0;
     ipda_params.point_size_source = 3.0;
     ipda_params.point_size_target = 3.0;
-    ipda_params.radius = 3.0+matching_err/150.0;
+    ipda_params.radius = 2.0+matching_err/150.0;
     if(matching_err>300)ipda_params.radius = 6.0;
     ipda_params.solver_function_tolerance = 1.0e-16;
     ipda_params.source_filter_size = msfilter;
@@ -211,37 +225,39 @@ bool Localizing::ComputeSE3()
     res_affine = res_affine.inverse();
     cout<<res_affine.matrix()<<endl; 
 
-    //save relocalization pose
-    cv::Mat Tcw = mpCurrentKF->GetPose();
-    cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
-    cv::Mat tcw = Tcw.rowRange(0,3).col(3);
-    g2o::Sim3 g2oS_init(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
-    Eigen::Matrix3d res_rot = res_affine.matrix().block<3,3>(0,0);
-    Eigen::Vector3d res_tran = res_affine.matrix().block<3,1>(0,3);
-    g2o::Sim3 g2oS_add(res_rot,res_tran,1.0);
-    mg2oScw = g2oS_add*g2oS_init;
-    const Eigen::Matrix<double,7,7> id = 1000.0*Eigen::Matrix<double,7,7>::Identity();
-    mInformation = Converter::toCvMat(id);
+    if(icp_success){
+        //save relocalization pose
+        cv::Mat Tcw = mpCurrentKF->GetPose();
+        cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
+        cv::Mat tcw = Tcw.rowRange(0,3).col(3);
+        g2o::Sim3 g2oS_init(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
+        Eigen::Matrix3d res_rot = res_affine.matrix().block<3,3>(0,0);
+        Eigen::Vector3d res_tran = res_affine.matrix().block<3,1>(0,3);
+        g2o::Sim3 g2oS_add(res_rot,res_tran,1.0);
+        mg2oScw = g2oS_add*g2oS_init;
+        const Eigen::Matrix<double,7,7> id = 1000.0*Eigen::Matrix<double,7,7>::Identity();
+        mInformation = Converter::toCvMat(id);
 
-    // add partial pose
-    Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
-    Eigen::Vector3d eigt = mg2oScw.translation();
-    double s = mg2oScw.scale();
-    eigt *=(1./s); 
-    cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
-    cout<<correctedTcw<<endl;
+        // add partial pose
+        Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
+        Eigen::Vector3d eigt = mg2oScw.translation();
+        double s = mg2oScw.scale();
+        eigt *=(1./s); 
+        cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
+        cout<<correctedTcw<<endl;
 
-    mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
-    mpCurrentKF->mCurPose = correctedTcw;
-    mpCurrentKF->mCurCov = mInformation; 
+        mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
+        mpCurrentKF->mCurPose = correctedTcw;
+        mpCurrentKF->mCurCov = mInformation; 
    
-    if(icp_success && VerifySE3())//&& sum_res>0.0001)
-    {
-        cout<<"*********************icp finished*********************"<<endl;
+        if(VerifySE3())//&& sum_res>0.0001)
+        {
+            cout<<"*********************icp finished*********************"<<endl;
 
-        return true;
+            return true;
+        }
     }
-    else return false;
+    return false;
 
 }
 
@@ -372,6 +388,8 @@ void Localizing::Localize()
     {
         unique_lock<mutex> lock(mMutexLoopQueue);
         mlpLoopKeyFrameQueue.clear();
+        unique_lock<mutex> lock2(mMutexLoopErrQueue);
+        mlpLoopErrQueue.clear();        
         // Avoid that a keyframe can be erased while it is being process by this thread
         mpCurrentKF->SetNotErase();
     }       
@@ -520,20 +538,15 @@ bool Localizing::VerifySE3()
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
 
-    int g2oresult = optimizer.optimize(1);
+    int g2oresult = optimizer.optimize(10);
 
-//    // Check inliers
-//    double index2=0;
-//    double sum_chi2 = 0;
-//    for(size_t i=0; i<vpEdges.size();i++)
-//    {
-//        g2o::EdgeXYZDepth* e12 = vpEdges[i];
-//        if(e12->chi2()<10)
-//        {
-//            index2++;
-//            sum_chi2 = sum_chi2 + e12->chi2();
-//        }
-//    }
+    // Recover optimized Sim3
+    cv::Mat Tcw = mpCurrentKF->mCurPose;
+    cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
+    cv::Mat tcw = Tcw.rowRange(0,3).col(3);
+    g2o::Sim3 g2oS_prev(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
+    g2o::VertexSim3Expmap* vSim3_recov = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(0));
+    mg2oScw = vSim3_recov->estimate()*g2oS_prev;
 
 
     delete [] depth;
@@ -546,8 +559,16 @@ bool Localizing::VerifySE3()
     cout<<"se3 verification: "<<new_matching_err<<endl;
 
 
-    if(new_matching_err<matching_err )return true;
-    else return false;  
+    if( new_matching_err < matching_err ){
+        Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
+        Eigen::Vector3d eigt = mg2oScw.translation();
+        double s = mg2oScw.scale();
+        eigt *=(1./s); //[R t/s;0 1]
+        cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
+        mpCurrentKF->mCurPose = correctedTcw;
+        return true;
+    }
+    return false;  
 
 
 }

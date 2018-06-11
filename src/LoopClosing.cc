@@ -263,7 +263,7 @@ bool LoopClosing::ComputeSE3()
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
 
-    int g2oresult = optimizer.optimize(10);
+    int g2oresult = optimizer.optimize(100);
     cout<<g2oresult<<endl;
 
     // Check inliers
@@ -314,7 +314,6 @@ bool LoopClosing::ComputeSE3()
     eigt *=(1./s); //[R t/s;0 1]
     cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
     cout<<correctedTcw<<endl;
-
 
     if(index2>1000 && matching_err<500 ){
         mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));

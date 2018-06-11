@@ -91,9 +91,12 @@ void LocalMapping::Run()
             }
 
             mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
+//            if(mpLoopCloser->matching_err>150){
+//                mpLocalizer->setMatchingErr(mpLoopCloser->matching_err);
+//                mpLocalizer->InsertKeyFrame(mpCurrentKeyFrame);
+//            }
             if(mpLoopCloser->matching_err>150){
-                mpLocalizer->setMatchingErr(mpLoopCloser->matching_err);
-                mpLocalizer->InsertKeyFrame(mpCurrentKeyFrame);
+                mpLocalizer->InsertKeyFrameAndErr(mpLoopCloser->GetCurrentKF(), mpLoopCloser->matching_err);
             }
         }
         else if(Stop())
