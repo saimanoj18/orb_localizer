@@ -192,9 +192,6 @@ bool LoopClosing::ComputeSE3()
     // SET SIMILARITY VERTEX
     g2o::VertexDepth * vSim3 = new g2o::VertexDepth();
     vSim3->_fix_scale= true;
-//    cv::Mat Tcw = mpCurrentKF->GetPose();
-//    cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
-//    cv::Mat tcw = Tcw.rowRange(0,3).col(3);
     Eigen::Matrix3d R = Eigen::Matrix3d::Identity();
     Eigen::Vector3d t(0,0,0);
     g2o::Sim3 g2oS_init(R,t,1.0);
@@ -226,10 +223,7 @@ bool LoopClosing::ComputeSE3()
     {
         // Set map points
         Eigen::Vector3d pts( mpCurrentKF->mGtVelodyne.points[i].x, mpCurrentKF->mGtVelodyne.points[i].y, mpCurrentKF->mGtVelodyne.points[i].z);
-//        pts << mpCurrentKF->mGtVelodyne.points[i].x, mpCurrentKF->mGtVelodyne.points[i].y, mpCurrentKF->mGtVelodyne.points[i].z;
 
-//        Eigen::Vector3d xyz = vSim3->estimate().map(pts);
-//        Eigen::Vector3d xyz = Converter::TransformPt(camcoordinate,pts);
         Eigen::Vector3d xyz = camcoordinate.block<3,3>(0,0)*pts+camcoordinate.block<3,1>(0,3);
         Eigen::Vector2d Ipos( vSim3->cam_map(xyz) );
         int i_idx = ((int)Ipos[1])*vSim3->_width+((int)Ipos[0]);
@@ -243,7 +237,6 @@ bool LoopClosing::ComputeSE3()
                     vPoint->setEstimate(xyz);
                     vPoint->setId(index);
                     vPoint->setFixed(true);
-//                    vPoint->setMarginalized(true);
                     optimizer.addVertex(vPoint);
                     
                     // Set Edges
@@ -270,7 +263,7 @@ bool LoopClosing::ComputeSE3()
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
 
-    int g2oresult = optimizer.optimize(100);
+    int g2oresult = optimizer.optimize(10);
     cout<<g2oresult<<endl;
 
     // Check inliers
@@ -323,14 +316,14 @@ bool LoopClosing::ComputeSE3()
     cout<<correctedTcw<<endl;
 
 
-    if(index2>1000 && matching_err<400 ){
+    if(index2>1000 && matching_err<500 ){
         mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
         mpCurrentKF->mCurPose = correctedTcw;
         mpCurrentKF->mCurCov = mInformation; 
-         return true;
+        return true;
     }
     else{
-        matching_err=400;
+//        matching_err=300;
         return false;
     }    
 

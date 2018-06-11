@@ -84,6 +84,8 @@ protected:
 
     void Localize();//YJ
 
+    bool VerifySE3();//YJ
+
     cv::Mat mInformation;//YJ
 
     void ResetIfRequested();
