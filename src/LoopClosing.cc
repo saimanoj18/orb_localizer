@@ -323,14 +323,14 @@ bool LoopClosing::ComputeSE3()
     cout<<correctedTcw<<endl;
 
 
-    if(index2>1000 && matching_err<500 ){
+    if(index2>1000 && matching_err<400 ){
         mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
         mpCurrentKF->mCurPose = correctedTcw;
         mpCurrentKF->mCurCov = mInformation; 
          return true;
     }
     else{
-        matching_err=1000;
+        matching_err=400;
         return false;
     }    
 
