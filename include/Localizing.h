@@ -74,6 +74,10 @@ public:
         matching_err = err;
     }
 
+    double getMatchingErr(){
+        return matching_err;
+    }
+
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 protected:

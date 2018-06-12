@@ -343,7 +343,7 @@ void LoopClosing::Localize()
     // Wait until Local Mapping has effectively stopped
     while(!mpLocalMapper->isStopped())
     {
-        usleep(100);
+        usleep(1000);
     }
 
     // Ensure current keyframe is updated

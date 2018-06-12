@@ -38,7 +38,7 @@ namespace ORB_SLAM2
 Localizing::Localizing(Map *pMap, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, const string &strSettingPath, const bool bFixScale):
     mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap), //mpSystem(pSys),
     mpKeyFrameDB(pDB), mpORBVocabulary(pVoc), mpMatchedKF(NULL), mLastLoopKFid(0), mbRunningGBA(false), mbFinishedGBA(true),
-    mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0)
+    mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0), matching_err(0.0)
 {
     mnCovisibilityConsistencyTh = 3;
 
@@ -158,8 +158,8 @@ bool Localizing::ComputeSE3()
     ipda_params.point_size_aligned_source = 3.0;
     ipda_params.point_size_source = 3.0;
     ipda_params.point_size_target = 3.0;
-    ipda_params.radius = 2.0+matching_err/150.0;
-    if(matching_err>300)ipda_params.radius = 6.0;
+    ipda_params.radius = 3.0+matching_err/150.0;
+    if(matching_err>300.0)ipda_params.radius = 5.0;
     ipda_params.solver_function_tolerance = 1.0e-16;
     ipda_params.source_filter_size = msfilter;
     ipda_params.target_filter_size = mtfilter;
@@ -168,7 +168,7 @@ bool Localizing::ComputeSE3()
     ipda_params.maximum_iterations = mmaxiterations;
     ipda_params.max_neighbours = mmaxneighbours;
     ipda_params.solver_maximum_iterations = ((int)matching_err)-msolveriteration;
-    if(matching_err>300)ipda_params.solver_maximum_iterations = 200.0;
+    if(matching_err>300.0)ipda_params.solver_maximum_iterations = 200;
     ipda_params.solver_num_threads = 100;
     ipda_params.aligned_cloud_filename = "aligned.pcd";
     ipda_params.frame_id = "map";
@@ -203,7 +203,7 @@ bool Localizing::ComputeSE3()
             Eigen::Vector3d xyz = camcoordinate.block<3,3>(0,0)*eigP3Dw+camcoordinate.block<3,1>(0,3);
             
 //            if( (xyz[2]<60.0f && xyz[2]>3.0f) || (xyz[2]>-60.0f &&xyz[2]<-3.0f) ){
-            if( xyz.norm()>0.0f && xyz.norm()<50.0f && xyz[1]>-5.0f){
+            if( xyz.norm()<50.0f && xyz[1]>-5.0f){
                 pcl::PointXYZ pts;
                 pts.x = eigP3Dw[0];
                 pts.y = eigP3Dw[1];
@@ -273,7 +273,7 @@ void Localizing::Localize()
     // Wait until Local Mapping has effectively stopped
     while(!mpLocalMapper->isStopped())
     {
-        usleep(100);
+        usleep(1000);
     }
 
     // Ensure current keyframe is updated
@@ -540,13 +540,6 @@ bool Localizing::VerifySE3()
 
     int g2oresult = optimizer.optimize(10);
 
-    // Recover optimized Sim3
-    cv::Mat Tcw = mpCurrentKF->mCurPose;
-    cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
-    cv::Mat tcw = Tcw.rowRange(0,3).col(3);
-    g2o::Sim3 g2oS_prev(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
-    g2o::VertexSim3Expmap* vSim3_recov = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(0));
-    mg2oScw = vSim3_recov->estimate()*g2oS_prev;
 
 
     delete [] depth;
@@ -560,12 +553,19 @@ bool Localizing::VerifySE3()
 
 
     if( new_matching_err < matching_err ){
-        Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
-        Eigen::Vector3d eigt = mg2oScw.translation();
-        double s = mg2oScw.scale();
-        eigt *=(1./s); //[R t/s;0 1]
-        cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
-        mpCurrentKF->mCurPose = correctedTcw;
+//        // Recover optimized Sim3
+//        cv::Mat Tcw = mpCurrentKF->mCurPose;
+//        cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
+//        cv::Mat tcw = Tcw.rowRange(0,3).col(3);
+//        g2o::Sim3 g2oS_prev(Converter::toMatrix3d(Rcw),Converter::toVector3d(tcw),1.0);
+//        g2o::VertexSim3Expmap* vSim3_recov = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(0));
+//        mg2oScw = vSim3_recov->estimate()*g2oS_prev;
+//        Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
+//        Eigen::Vector3d eigt = mg2oScw.translation();
+//        double s = mg2oScw.scale();
+//        eigt *=(1./s); //[R t/s;0 1]
+//        cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
+//        mpCurrentKF->mCurPose = correctedTcw;
         return true;
     }
     return false;  
