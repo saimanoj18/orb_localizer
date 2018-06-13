@@ -8,7 +8,7 @@ ICP.ipda_params_dof: 100.0
 ICP.source_filter_size: 0.0
 ICP.target_filter_size: 10.0
 ICP.transformation_epsilon: 1.0e-3
-ICP.maximum_iterations: 100
+ICP.maximum_iterations: 200
 ICP.max_neighbours: 1
 ICP.solver_maximum_iterations: 150
 
