@@ -243,6 +243,24 @@ void LoadVelodyne(const string &strPathToSequence, const string &strSettingPath,
                 res_mat = start_mat.inv()*Tgt*Tcv.inv();
             }
             vGTPoses.push_back(res_mat);
+
+//            cv::Mat saved_pose = res_mat;
+//            ofstream poses_file("GT_poses.txt", std::ios::app);
+//            if (poses_file.is_open()){
+//                poses_file << saved_pose.at<float>(0,0) << ' ';
+//                poses_file << saved_pose.at<float>(0,1) << ' ';
+//                poses_file << saved_pose.at<float>(0,2) << ' ';
+//                poses_file << saved_pose.at<float>(0,3) << '\n';
+//                poses_file << saved_pose.at<float>(1,0) << ' ';
+//                poses_file << saved_pose.at<float>(1,1) << ' ';
+//                poses_file << saved_pose.at<float>(1,2) << ' ';
+//                poses_file << saved_pose.at<float>(1,3) << '\n';
+//                poses_file << saved_pose.at<float>(2,0) << ' ';
+//                poses_file << saved_pose.at<float>(2,1) << ' ';
+//                poses_file << saved_pose.at<float>(2,2) << ' ';
+//                poses_file << saved_pose.at<float>(2,3) << '\n';
+//            }
+//            poses_file.close();
         }
     }
     fGTPoses.close();

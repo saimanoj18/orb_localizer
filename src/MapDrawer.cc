@@ -305,6 +305,25 @@ void MapDrawer::SetCurrentCameraPose(const cv::Mat &Tcw)
 {
     unique_lock<mutex> lock(mMutexCamera);
     mCameraPose = Tcw.clone();
+
+    //save current camera pose
+    cv::Mat saved_pose = mCameraPose.inv();
+    ofstream poses_file("EST_poses.txt", std::ios::app);
+    if (poses_file.is_open()){
+        poses_file << saved_pose.at<float>(0,0) << ' ';
+        poses_file << saved_pose.at<float>(0,1) << ' ';
+        poses_file << saved_pose.at<float>(0,2) << ' ';
+        poses_file << saved_pose.at<float>(0,3) << '\n';
+        poses_file << saved_pose.at<float>(1,0) << ' ';
+        poses_file << saved_pose.at<float>(1,1) << ' ';
+        poses_file << saved_pose.at<float>(1,2) << ' ';
+        poses_file << saved_pose.at<float>(1,3) << '\n';
+        poses_file << saved_pose.at<float>(2,0) << ' ';
+        poses_file << saved_pose.at<float>(2,1) << ' ';
+        poses_file << saved_pose.at<float>(2,2) << ' ';
+        poses_file << saved_pose.at<float>(2,3) << '\n';
+    }
+    poses_file.close();
 }
 
 void MapDrawer::SetCurrentGT(const cv::Mat &gtPose, const pcl::PointCloud<pcl::PointXYZ> &gtVelodyne)
