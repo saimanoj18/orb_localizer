@@ -314,7 +314,7 @@ void SegmentVelodyne(cv::Mat &vGTPose,  pcl::octree::OctreePointCloudSearch<pcl:
 
     //pt cloud
     curVelodyne.clear();
-    curVelodyne.width = pointIdxRadiusSearch.size()/10+1;
+    curVelodyne.width = pointIdxRadiusSearch.size()/30+1;
     curVelodyne.height = 1;
     curVelodyne.points.resize (curVelodyne.width * curVelodyne.height);
 
@@ -331,7 +331,7 @@ void SegmentVelodyne(cv::Mat &vGTPose,  pcl::octree::OctreePointCloudSearch<pcl:
     int index = 0;
     for (size_t i = 0; i < pointIdxRadiusSearch.size (); ++i)
     {
-        if(i%10==0){
+        if(i%30==0){
         curVelodyne.points[count].x = GTVelodyne->points[ pointIdxRadiusSearch[i] ].x;
         curVelodyne.points[count].y = GTVelodyne->points[ pointIdxRadiusSearch[i] ].y;
         curVelodyne.points[count].z = GTVelodyne->points[ pointIdxRadiusSearch[i] ].z;

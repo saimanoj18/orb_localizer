@@ -158,8 +158,8 @@ bool Localizing::ComputeSE3()
     ipda_params.point_size_aligned_source = 3.0;
     ipda_params.point_size_source = 3.0;
     ipda_params.point_size_target = 3.0;
-    ipda_params.radius = 1.0+matching_err/100.0;
-//    if(matching_err>300.0)ipda_params.radius = 6.0;
+    ipda_params.radius = 3.0+matching_err/100.0;
+    if(matching_err>300.0)ipda_params.radius = 6.0;
     ipda_params.solver_function_tolerance = 1.0e-16;
     ipda_params.source_filter_size = msfilter;
     ipda_params.target_filter_size = mtfilter;
@@ -168,7 +168,7 @@ bool Localizing::ComputeSE3()
     ipda_params.maximum_iterations = mmaxiterations;
     ipda_params.max_neighbours = mmaxneighbours;
     ipda_params.solver_maximum_iterations = ((int)matching_err)-msolveriteration;
-    if(matching_err>200.0)ipda_params.solver_maximum_iterations = 100;
+    if(matching_err>300.0)ipda_params.solver_maximum_iterations = 100;
     ipda_params.solver_num_threads = 100;
     ipda_params.aligned_cloud_filename = "aligned.pcd";
     ipda_params.frame_id = "map";

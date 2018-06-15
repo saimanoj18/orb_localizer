@@ -110,10 +110,18 @@ bool LoopClosing::DetectLocalize()
     //If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
     if(mpCurrentKF->mnId<mLastLoopKFid+3)
     {
+//        if(mlpLoopKeyFrameQueue.size()>0){
         mpKeyFrameDB->add(mpCurrentKF);
         mpCurrentKF->SetErase();
         return false;
+//        }
     }
+
+//    if(mlpLoopKeyFrameQueue.size()>0){
+//        mpKeyFrameDB->add(mpCurrentKF);
+//        mpCurrentKF->SetErase();
+//        return false;
+//    }
 
     return true;
 
@@ -315,7 +323,7 @@ bool LoopClosing::ComputeSE3()
     cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
     cout<<correctedTcw<<endl;
 
-    if(index2>1000 && matching_err<500 ){
+    if(index2>100 && matching_err<500 ){
         mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
         mpCurrentKF->mCurPose = correctedTcw;
         mpCurrentKF->mCurCov = mInformation; 
