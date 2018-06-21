@@ -91,12 +91,6 @@ void LocalMapping::Run()
             }
 
             mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
-//            if(mpLoopCloser->matching_err>150){
-//                mpLocalizer->setMatchingErr(mpLoopCloser->matching_err);
-//                mpLocalizer->InsertKeyFrame(mpCurrentKeyFrame);
-//            }
-//            double check_again = abs(mpLocalizer->getMatchingErr()-mpLoopCloser->matching_err);
-//            cout<<"check_again"<<check_again<<endl;
             if(mpLoopCloser->matching_err>150){// && check_again >0.0 ){
                 mpLocalizer->InsertKeyFrameAndErr(mpLoopCloser->GetCurrentKF(), mpLoopCloser->matching_err);
             }

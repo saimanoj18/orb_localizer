@@ -5,7 +5,7 @@ project(ORB_SLAM2)
 #  SET(CMAKE_BUILD_TYPE Release)
 #ENDIF()
 
-  SET(CMAKE_BUILD_TYPE Release)
+SET(CMAKE_BUILD_TYPE release)
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
