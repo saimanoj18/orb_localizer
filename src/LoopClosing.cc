@@ -68,6 +68,9 @@ void LoopClosing::Run()
                 if(ComputeSE3()){
                     Localize();
                 }
+                else{     
+                    needRelocalize = true;
+                }
 
             }
         }    
@@ -267,12 +270,13 @@ bool LoopClosing::ComputeSE3()
 
     }
     
-    cout<<index<<endl;
+//    cout<<index<<endl;
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
 
     int g2oresult = optimizer.optimize(100);
-    cout<<g2oresult<<endl;
+//    cout<<g2oresult<<endl;
+
 
     // Check inliers
     double index2=0;
@@ -286,7 +290,7 @@ bool LoopClosing::ComputeSE3()
             sum_chi2 = sum_chi2 + e12->chi2();
         }
     }
-    cout<<index2<<endl;
+//    cout<<index2<<endl;
 
     // Recover optimized Sim3
     cv::Mat Tcw = mpCurrentKF->GetPose();
@@ -313,7 +317,7 @@ bool LoopClosing::ComputeSE3()
     cout<<"activeRobustChi2() "<<matching_err<<endl;
 
     mInformation = 0.000000001*mInformation;///matching_err;
-    cout << mInformation <<endl;
+//    cout << mInformation <<endl;
 
     // add partial pose
     Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
@@ -321,9 +325,9 @@ bool LoopClosing::ComputeSE3()
     double s = mg2oScw.scale();
     eigt *=(1./s); //[R t/s;0 1]
     cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
-    cout<<correctedTcw<<endl;
+//    cout<<correctedTcw<<endl;
 
-    if(index2>100 && matching_err<500 ){
+    if(index>100 && matching_err<800 ){
         mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
         mpCurrentKF->mCurPose = correctedTcw;
         mpCurrentKF->mCurCov = mInformation; 

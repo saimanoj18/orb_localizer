@@ -99,7 +99,7 @@ int main(int argc, char **argv)
         double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
         double tttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t3 - t1).count();
         vTimesTrack[ni]=ttrack;
-        cout<<"********time passed: "<<ttrack<<", "<<tttrack<<endl;
+//        cout<<"********time passed: "<<ttrack<<", "<<tttrack<<endl;
 
     }
 

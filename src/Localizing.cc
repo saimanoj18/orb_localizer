@@ -223,7 +223,8 @@ bool Localizing::ComputeSE3()
     Eigen::Affine3d res_affine; 
     bool icp_success = ipda.evaluate(cloud_in, cloud_out, res_affine);//.inverse();
     res_affine = res_affine.inverse();
-    cout<<res_affine.matrix()<<endl; 
+//    cout<<res_affine.matrix()<<endl;
+
 
     if(icp_success){
         //save relocalization pose
@@ -244,7 +245,7 @@ bool Localizing::ComputeSE3()
         double s = mg2oScw.scale();
         eigt *=(1./s); 
         cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
-        cout<<correctedTcw<<endl;
+//        cout<<correctedTcw<<endl;
 
         mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
         mpCurrentKF->mCurPose = correctedTcw;
