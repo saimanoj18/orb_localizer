@@ -327,13 +327,14 @@ bool LoopClosing::ComputeSE3()
     cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
 //    cout<<correctedTcw<<endl;
 
-    if(index>100 && matching_err<800 ){
+    if(index2>100 || matching_err<300 ){
         mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
         mpCurrentKF->mCurPose = correctedTcw;
         mpCurrentKF->mCurCov = mInformation; 
         return true;
     }
     else{
+//        if(matching_err<800)matching_err=1000;
 //        matching_err=300;
         return false;
     }    

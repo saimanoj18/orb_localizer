@@ -159,10 +159,20 @@ cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const
         if(mbReset)
         {
             mpTracker->Reset();
-//            mpTracker->ResetbyRelocalize();//YJ
             mbReset = false;
+            ofstream state_file("EST_state.txt", std::ios::app);
+            if (state_file.is_open())state_file << '0' << '\n';
+            state_file.close();
+        }
+        else
+        {
+            ofstream state_file("EST_state.txt", std::ios::app);
+            if (state_file.is_open())state_file << '1' << '\n';
+            state_file.close();
         }
     }
+
+
     
     cv::Mat Tcw = mpTracker->GrabImageStereo(imLeft,imRight,timestamp,gtPose,gtVelodyne);
 
