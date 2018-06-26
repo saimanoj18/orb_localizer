@@ -160,6 +160,7 @@ bool Localizing::ComputeSE3()
     ipda_params.point_size_target = 3.0;
     ipda_params.radius = 2.0+matching_err/100.0;
     if(matching_err>300.0)ipda_params.radius = 5.0;
+    if(matching_err>500.0)ipda_params.radius = 10.0;
     ipda_params.solver_function_tolerance = 1.0e-16;
     ipda_params.source_filter_size = msfilter;
     ipda_params.target_filter_size = mtfilter;
