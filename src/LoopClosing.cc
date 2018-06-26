@@ -240,7 +240,7 @@ bool LoopClosing::ComputeSE3()
         int i_idx = ((int)Ipos[1])*vSim3->_width+((int)Ipos[0]);
         
         
-        if ( xyz[2]>0.0f && isfinite(xyz[2]) && xyz[2]<matching_thres && xyz[2]<35.0f ){//
+        if ( xyz[2]>0.0f && isfinite(xyz[2]) && xyz[2]<matching_thres && xyz[2]<25.0f ){//
                 if (Ipos[0]<vSim3->_width && Ipos[0]>=0 && Ipos[1]<vSim3->_height && Ipos[1]>=0 && depth_info[i_idx]>5.0)
                 {
                     // SET PointXYZ VERTEX
@@ -279,7 +279,7 @@ bool LoopClosing::ComputeSE3()
 
 
     // Check inliers
-    double index2=0;
+    int index2=0;
     double sum_chi2 = 0;
     for(size_t i=0; i<vpEdges.size();i++)
     {
@@ -327,7 +327,7 @@ bool LoopClosing::ComputeSE3()
     cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
 //    cout<<correctedTcw<<endl;
 
-    if(index2>30)
+    if(index2>30 && matching_err<1000)
     {
         if(index2>100 || matching_err<500 ){
             mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));

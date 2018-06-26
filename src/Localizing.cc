@@ -169,7 +169,7 @@ bool Localizing::ComputeSE3()
     ipda_params.maximum_iterations = mmaxiterations;
     ipda_params.max_neighbours = mmaxneighbours;
     ipda_params.solver_maximum_iterations = ((int)matching_err)-msolveriteration;
-    if(matching_err>300.0)ipda_params.solver_maximum_iterations = 100;
+    if(matching_err>250.0)ipda_params.solver_maximum_iterations = 100;
     ipda_params.solver_num_threads = 100;
     ipda_params.aligned_cloud_filename = "aligned.pcd";
     ipda_params.frame_id = "map";
@@ -554,7 +554,7 @@ bool Localizing::VerifySE3()
     cout<<"se3 verification: "<<new_matching_err<<endl;
 
 
-    if( new_matching_err + 30.0 < matching_err ){
+    if( new_matching_err + 20.0 < matching_err ){
 //        // Recover optimized Sim3
 //        cv::Mat Tcw = mpCurrentKF->mCurPose;
 //        cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);

@@ -31,7 +31,7 @@ namespace ORB_SLAM2
 
 LocalMapping::LocalMapping(Map *pMap, const float bMonocular):
     mbMonocular(bMonocular), mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpMap(pMap),
-    mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true)
+    mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true), err_saved(0.0)
 {
 }
 
@@ -92,7 +92,8 @@ void LocalMapping::Run()
 
             mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
 //            cout<<"test2"<<mpLoopCloser->GetCurrentKF()->GetPose()<<endl;
-            if(mpLoopCloser->matching_err>150){ // && mpLoopCloser->GetCurrentKF()!=NULL){// && check_again >0.0 ){
+            if(mpLoopCloser->matching_err>150 && abs(err_saved-mpLoopCloser->matching_err)>0.1){
+                err_saved = mpLoopCloser->matching_err;
                 mpLocalizer->InsertKeyFrameAndErr(mpCurrentKeyFrame, mpLoopCloser->matching_err);
             }
         }
