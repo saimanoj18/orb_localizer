@@ -274,7 +274,7 @@ bool LoopClosing::ComputeSE3()
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
 
-    int g2oresult = optimizer.optimize(100);
+    int g2oresult = optimizer.optimize(50);
 //    cout<<g2oresult<<endl;
 
 
