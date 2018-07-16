@@ -106,6 +106,10 @@ add_executable(testicp
 Examples/Stereo/testicp.cc)
 target_link_libraries(testicp ${PROJECT_NAME})
 
+add_executable(gangnam
+Examples/Stereo/gangnam.cc)
+target_link_libraries(gangnam ${PROJECT_NAME})
+
 add_executable(pankyo
 Examples/Stereo/pankyo.cc)
 target_link_libraries(pankyo ${PROJECT_NAME})

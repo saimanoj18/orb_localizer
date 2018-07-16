@@ -158,8 +158,8 @@ bool Localizing::ComputeSE3()
     ipda_params.point_size_aligned_source = 3.0;
     ipda_params.point_size_source = 3.0;
     ipda_params.point_size_target = 3.0;
-    ipda_params.radius = 2.0+matching_err/100.0;
-//    if(matching_err>300.0)ipda_params.radius = 5.0;
+    ipda_params.radius = matching_err/50.0;//2.0+matching_err/100.0;
+//    if(matching_err>300.0)ipda_params.radius = 10.0;
 //    if(matching_err>500.0)ipda_params.radius = 10.0;
     ipda_params.solver_function_tolerance = 1.0e-16;
     ipda_params.source_filter_size = msfilter;
@@ -540,7 +540,7 @@ bool Localizing::VerifySE3()
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
 
-    int g2oresult = optimizer.optimize(10);
+    int g2oresult = optimizer.optimize(100);
 
 
 
@@ -554,7 +554,7 @@ bool Localizing::VerifySE3()
     cout<<"se3 verification: "<<new_matching_err<<endl;
 
 
-    if( new_matching_err + 20.0 < matching_err ){
+    if( new_matching_err + 10.0 < matching_err ){
 //        // Recover optimized Sim3
 //        cv::Mat Tcw = mpCurrentKF->mCurPose;
 //        cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);

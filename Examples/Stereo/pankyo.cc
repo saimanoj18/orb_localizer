@@ -249,7 +249,7 @@ void LoadVelodyne(const string &strPathToSequence, const string &strSettingPath,
 
     //Load global map from .las
     ifstream fGTVelodyne;
-    string strPathGTPointFile = strPathToSequence +"/sick_pointcloud2.las";
+    string strPathGTPointFile = strPathToSequence +"/sick_pointcloud.las";
     
     if (!liblas::Open(fGTVelodyne, strPathGTPointFile))
     {
@@ -258,7 +258,7 @@ void LoadVelodyne(const string &strPathToSequence, const string &strSettingPath,
 
     liblas::Reader reader(fGTVelodyne);
     liblas::Header const& h = reader.GetHeader();        
-    GTVelodyne->width = h.GetPointRecordsCount()/100+1;
+    GTVelodyne->width = h.GetPointRecordsCount()/50+1;
     GTVelodyne->height = 1;
     GTVelodyne->points.resize (GTVelodyne->width * GTVelodyne->height);
     int count = 0;
@@ -266,7 +266,7 @@ void LoadVelodyne(const string &strPathToSequence, const string &strSettingPath,
     while (reader.ReadNextPoint())
     {        
         liblas::Point const& p = reader.GetPoint();
-        if(count2%100==0){
+        if(count2%50==0){
         GTVelodyne->points[count].x = p[0];
         GTVelodyne->points[count].y = p[1];
         GTVelodyne->points[count].z = p[2];
