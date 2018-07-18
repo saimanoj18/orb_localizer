@@ -133,6 +133,8 @@ protected:
     // System
 //    System* mpSystem;
 
+    std::list<double> m_errors;//YJ
+
     std::list<KeyFrame*> mlpLoopKeyFrameQueue;
 
     std::mutex mMutexLoopQueue;

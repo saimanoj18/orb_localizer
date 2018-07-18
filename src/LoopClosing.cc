@@ -317,7 +317,6 @@ bool LoopClosing::ComputeSE3()
     cout<<"activeRobustChi2() "<<matching_err<<endl;
 
     mInformation = 0.000000001*mInformation;///matching_err;
-//    cout << mInformation <<endl;
 
     // add partial pose
     Eigen::Matrix3d eigR = mg2oScw.rotation().toRotationMatrix();
@@ -325,22 +324,58 @@ bool LoopClosing::ComputeSE3()
     double s = mg2oScw.scale();
     eigt *=(1./s); //[R t/s;0 1]
     cv::Mat correctedTcw = Converter::toCvSE3(eigR,eigt);
-//    cout<<correctedTcw<<endl;
 
-    if(index2>0 && matching_err<700)//index2>30 && 
+
+//    if(index2>0 && matching_err<500)//index2>30 && 
+//    {
+//        if(index2>200 || matching_err<300 ){
+//            mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
+//            mpCurrentKF->mCurPose = correctedTcw;
+//            mpCurrentKF->mCurCov = mInformation; 
+//            return true;
+//        }
+//        else{
+//            return false;
+//        }
+//    }
+//    else return false;
+
+    m_errors.push_back(matching_err);
+
+    if(m_errors.size()>5)m_errors.pop_front();
+    else
     {
-        if(index2>300 || matching_err<500 ){
+        mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
+        mpCurrentKF->mCurPose = correctedTcw;
+        mpCurrentKF->mCurCov = mInformation; 
+        return true;
+    }
+
+    double avg = 0;
+    std::list<double>::iterator it;
+    for(it = m_errors.begin(); it != m_errors.end(); it++) avg += *it;
+    avg /= m_errors.size();
+
+    if(avg<300)
+    {
+        if(index2>10)
+        {
             mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
             mpCurrentKF->mCurPose = correctedTcw;
             mpCurrentKF->mCurCov = mInformation; 
             return true;
         }
-        else{
+        else
+        {
+            m_errors.clear();
             return false;
-        }
+        } 
     }
-    else return false;    
-
+    else
+    {
+        m_errors.clear();
+        return false;    
+    }
 
 }
 
