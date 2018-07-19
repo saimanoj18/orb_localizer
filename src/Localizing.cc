@@ -158,7 +158,7 @@ bool Localizing::ComputeSE3()
     ipda_params.point_size_aligned_source = 3.0;
     ipda_params.point_size_source = 3.0;
     ipda_params.point_size_target = 3.0;
-    ipda_params.radius = matching_err/50.0;//2.0+matching_err/100.0;
+    ipda_params.radius = 2.0+matching_err/100.0;//matching_err/50.0;//
 //    if(matching_err>300.0)ipda_params.radius = 10.0;
 //    if(matching_err>500.0)ipda_params.radius = 10.0;
     ipda_params.solver_function_tolerance = 1.0e-16;
@@ -169,7 +169,7 @@ bool Localizing::ComputeSE3()
     ipda_params.maximum_iterations = mmaxiterations;
     ipda_params.max_neighbours = mmaxneighbours;
     ipda_params.solver_maximum_iterations = ((int)matching_err)-msolveriteration;
-//    if(matching_err>200.0)ipda_params.solver_maximum_iterations = 100;
+    if(matching_err>170.0)ipda_params.solver_maximum_iterations = 100;
 //    ipda_params.solver_maximum_iterations = 100;
     ipda_params.solver_num_threads = 100;
     ipda_params.aligned_cloud_filename = "aligned.pcd";
@@ -555,7 +555,7 @@ bool Localizing::VerifySE3()
     cout<<"se3 verification: "<<new_matching_err<<endl;
 
 
-    if( new_matching_err < 0.9 * matching_err){// && new_matching_err<200.0 
+    if( new_matching_err < 0.95 * matching_err){// && new_matching_err<200.0 
 //        // Recover optimized Sim3
 //        cv::Mat Tcw = mpCurrentKF->mCurPose;
 //        cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);

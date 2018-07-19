@@ -342,7 +342,7 @@ bool LoopClosing::ComputeSE3()
 
     m_errors.push_back(matching_err);
 
-    if(m_errors.size()>5)m_errors.pop_front();
+    if(m_errors.size()>10)m_errors.pop_front();
     else
     {
         mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
@@ -356,9 +356,15 @@ bool LoopClosing::ComputeSE3()
     for(it = m_errors.begin(); it != m_errors.end(); it++) avg += *it;
     avg /= m_errors.size();
 
+    if(index2<10)
+    {
+        m_errors.clear();
+        return false;
+    } 
+
     if(avg<300)
     {
-        if(index2>10)
+        if(index2>200 || avg<200)
         {
             mpCurrentKF->mPartialPose.push_back(std::pair<cv::Mat, cv::Mat>(correctedTcw,mInformation));
             mpCurrentKF->mCurPose = correctedTcw;
